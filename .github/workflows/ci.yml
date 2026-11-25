@@ -45,4 +45,13 @@ jobs:
         working-directory: Packages/SetbookKit
     steps:
       - uses: actions/checkout@v7
+      # GRDB pulls a git submodule; retry transient network failures before testing.
+      - name: Resolve packages
+        run: |
+          for attempt in 1 2 3; do
+            swift package resolve && exit 0
+            echo "resolve failed (attempt $attempt), retrying"
+            sleep $((attempt * 10))
+          done
+          exit 1
       - run: swift test
