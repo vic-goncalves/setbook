@@ -45,6 +45,8 @@ struct SignInView: View {
                 .disabled(account.isSigningIn)
 
                 #if DEBUG
+                // Only against a local server: production refuses dev sign-in.
+                if ["localhost", "127.0.0.1"].contains(account.origin.host() ?? "") {
                 HStack(spacing: Spacing.xs) {
                     TextField("", text: $devName, prompt: Text("Dev name").foregroundStyle(Theme.tertiaryInk))
                         .textInputAutocapitalization(.never)
@@ -57,10 +59,11 @@ struct SignInView: View {
                         .buttonStyle(.quietPill)
                         .disabled(devName.trimmingCharacters(in: .whitespaces).isEmpty || account.isSigningIn)
                 }
-                Text("Debug builds only. Works against a local server with DEV_AUTH=true.")
+                Text("Local server with DEV_AUTH=true only.")
                     .font(.caption2)
                     .foregroundStyle(Theme.tertiaryInk)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 #endif
 
                 Text("Your log works offline and syncs with the Setbook web app.")
