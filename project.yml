@@ -1,0 +1,81 @@
+name: Setbook
+options:
+  bundleIdPrefix: com.setbook
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Set your personal team in Xcode (Signing & Capabilities) or here as DEVELOPMENT_TEAM.
+    CODE_SIGN_STYLE: Automatic
+    # The deployed API. For a local server in the simulator, pass -apiOrigin http://localhost:8787.
+    SETBOOK_API_ORIGIN: https://setbook.vic-goncalves.workers.dev
+packages:
+  SetbookKit:
+    path: Packages/SetbookKit
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: "7.0.0"
+targets:
+  Setbook:
+    type: application
+    platform: iOS
+    sources:
+      - path: App/Sources
+      - path: App/Resources
+    dependencies:
+      - package: SetbookKit
+        product: Domain
+      - package: SetbookKit
+        product: Metrics
+      - package: SetbookKit
+        product: Persistence
+      - package: SetbookKit
+        product: Workflow
+      - package: SetbookKit
+        product: Sync
+      - package: GRDB
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Setbook
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIUserInterfaceStyle: Dark
+        SetbookAPIOrigin: $(SETBOOK_API_ORIGIN)
+        CFBundleURLTypes:
+          - CFBundleURLName: app.setbook.auth
+            CFBundleURLSchemes: [setbook]
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIApplicationSupportsIndirectInputEvents: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.setbook.app
+        TARGETED_DEVICE_FAMILY: "1"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ENABLE_PREVIEWS: true
+  SetbookUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [App/UITests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.setbook.app.uitests
+    dependencies:
+      - target: Setbook
+schemes:
+  Setbook:
+    build:
+      targets:
+        Setbook: all
+    test:
+      targets:
+        - SetbookUITests

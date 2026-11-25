@@ -1,0 +1,7 @@
+# Copy to .dev.vars for local development. Never commit .dev.vars.
+GOOGLE_CLIENT_SECRET=
+# Any long random string; generate with: openssl rand -base64 48
+SESSION_SIGNING_KEY=
+DEV_AUTH=true
+WEB_ORIGINS=http://localhost:5173,https://vic-goncalves.github.io
+APP_ORIGIN=http://localhost:8787

@@ -1,0 +1,301 @@
+{
+  "bodyMeasurements" : [
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "id" : "66666666-6666-4666-8666-000000000000",
+      "kind" : "body_weight",
+      "mass" : {
+        "unit" : "kg",
+        "value" : 80
+      },
+      "measuredAt" : "2026-01-01T12:00:00.000Z",
+      "source" : "manual",
+      "timeZoneIdentifier" : "UTC",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "id" : "66666666-6666-4666-8666-000000000001",
+      "kind" : "body_weight",
+      "mass" : {
+        "unit" : "kg",
+        "value" : 81
+      },
+      "measuredAt" : "2026-01-01T21:36:00.000Z",
+      "source" : "manual",
+      "timeZoneIdentifier" : "UTC",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "id" : "66666666-6666-4666-8666-000000000002",
+      "kind" : "body_weight",
+      "mass" : {
+        "unit" : "lb",
+        "value" : 178.6
+      },
+      "measuredAt" : "2026-01-03T12:00:00.000Z",
+      "source" : "manual",
+      "timeZoneIdentifier" : "UTC",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "id" : "66666666-6666-4666-8666-000000000003",
+      "kind" : "body_weight",
+      "mass" : {
+        "unit" : "kg",
+        "value" : 79
+      },
+      "measuredAt" : "2026-01-10T12:00:00.000Z",
+      "source" : "manual",
+      "timeZoneIdentifier" : "UTC",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "customExercises" : [
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "equipment" : "barbell",
+      "id" : "11111111-1111-4111-8111-111111111111",
+      "isBuiltIn" : false,
+      "measurement" : {
+        "loadConvention" : "per_hand",
+        "type" : "external_load_reps"
+      },
+      "name" : "Landmine Press",
+      "primaryMuscle" : "shoulders",
+      "secondaryMuscles" : [
+
+      ],
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "exportedAt" : "2026-01-01T00:00:00.000Z",
+  "formatVersion" : 1,
+  "sessions" : [
+    {
+      "createdAt" : "2026-01-02T00:00:00.000Z",
+      "exercises" : [
+        {
+          "exerciseId" : "1E745624-563E-59EB-8458-DD9D29D3CC25",
+          "exerciseName" : "Bench Press (Barbell)",
+          "id" : "55555555-5555-4555-8555-000000000001",
+          "measurement" : {
+            "loadConvention" : "total",
+            "type" : "external_load_reps"
+          },
+          "restSeconds" : 90,
+          "sets" : [
+            {
+              "completedAt" : "2026-01-01T00:00:01.000Z",
+              "id" : "33333333-3333-4333-8333-000000000001",
+              "load" : {
+                "unit" : "kg",
+                "value" : 60
+              },
+              "reps" : 10,
+              "type" : "warmup"
+            },
+            {
+              "completedAt" : "2026-01-01T00:00:02.000Z",
+              "id" : "33333333-3333-4333-8333-000000000002",
+              "load" : {
+                "unit" : "kg",
+                "value" : 100
+              },
+              "reps" : 6,
+              "type" : "working"
+            },
+            {
+              "completedAt" : "2026-01-01T00:00:03.000Z",
+              "id" : "33333333-3333-4333-8333-000000000003",
+              "load" : {
+                "unit" : "kg",
+                "value" : 100
+              },
+              "reps" : 5,
+              "type" : "working"
+            }
+          ]
+        }
+      ],
+      "finishedAt" : "2026-01-02T01:00:00.000Z",
+      "id" : "44444444-4444-4444-8444-000000000001",
+      "name" : "Push",
+      "sourceTemplate" : {
+        "revision" : 1,
+        "templateId" : "22222222-2222-4222-8222-222222222222"
+      },
+      "startedAt" : "2026-01-02T00:00:00.000Z",
+      "state" : "completed",
+      "timeZoneIdentifier" : "America\/New_York",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "createdAt" : "2026-01-02T12:00:00.000Z",
+      "exercises" : [
+        {
+          "exerciseId" : "1E745624-563E-59EB-8458-DD9D29D3CC25",
+          "exerciseName" : "Bench Press (Barbell)",
+          "id" : "55555555-5555-4555-8555-000000000002",
+          "measurement" : {
+            "loadConvention" : "total",
+            "type" : "external_load_reps"
+          },
+          "restSeconds" : 90,
+          "sets" : [
+            {
+              "completedAt" : "2026-01-01T00:00:04.000Z",
+              "id" : "33333333-3333-4333-8333-000000000004",
+              "load" : {
+                "unit" : "lb",
+                "value" : 225
+              },
+              "reps" : 3,
+              "type" : "working"
+            },
+            {
+              "completedAt" : "2026-01-01T00:00:05.000Z",
+              "id" : "33333333-3333-4333-8333-000000000005",
+              "load" : {
+                "unit" : "lb",
+                "value" : 220.462262
+              },
+              "reps" : 7,
+              "type" : "working"
+            },
+            {
+              "id" : "33333333-3333-4333-8333-000000000006",
+              "load" : {
+                "unit" : "lb",
+                "value" : 240
+              },
+              "reps" : 1,
+              "type" : "working"
+            }
+          ]
+        }
+      ],
+      "finishedAt" : "2026-01-02T13:00:00.000Z",
+      "id" : "44444444-4444-4444-8444-000000000002",
+      "name" : "Push",
+      "sourceTemplate" : {
+        "revision" : 1,
+        "templateId" : "22222222-2222-4222-8222-222222222222"
+      },
+      "startedAt" : "2026-01-02T12:00:00.000Z",
+      "state" : "completed",
+      "timeZoneIdentifier" : "America\/New_York",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    },
+    {
+      "createdAt" : "2026-01-09T00:00:00.000Z",
+      "exercises" : [
+        {
+          "exerciseId" : "1E745624-563E-59EB-8458-DD9D29D3CC25",
+          "exerciseName" : "Bench Press (Barbell)",
+          "id" : "55555555-5555-4555-8555-000000000003",
+          "measurement" : {
+            "loadConvention" : "total",
+            "type" : "external_load_reps"
+          },
+          "restSeconds" : 90,
+          "sets" : [
+            {
+              "completedAt" : "2026-01-01T00:00:07.000Z",
+              "id" : "33333333-3333-4333-8333-000000000007",
+              "load" : {
+                "unit" : "kg",
+                "value" : 105
+              },
+              "reps" : 5,
+              "type" : "working"
+            }
+          ]
+        },
+        {
+          "exerciseId" : "1495D7A2-05D1-5572-A687-BD4D2D4755F4",
+          "exerciseName" : "Pull-up (Assisted)",
+          "id" : "55555555-5555-4555-8555-000000000004",
+          "measurement" : {
+            "loadConvention" : "assistance",
+            "type" : "assisted_bodyweight_reps"
+          },
+          "restSeconds" : 90,
+          "sets" : [
+            {
+              "completedAt" : "2026-01-01T00:00:08.000Z",
+              "id" : "33333333-3333-4333-8333-000000000008",
+              "load" : {
+                "unit" : "kg",
+                "value" : 30
+              },
+              "reps" : 8,
+              "type" : "working"
+            },
+            {
+              "completedAt" : "2026-01-01T00:00:09.000Z",
+              "id" : "33333333-3333-4333-8333-000000000009",
+              "load" : {
+                "unit" : "kg",
+                "value" : 25
+              },
+              "reps" : 6,
+              "type" : "working"
+            }
+          ]
+        }
+      ],
+      "finishedAt" : "2026-01-09T01:00:00.000Z",
+      "id" : "44444444-4444-4444-8444-000000000003",
+      "name" : "Push",
+      "sourceTemplate" : {
+        "revision" : 1,
+        "templateId" : "22222222-2222-4222-8222-222222222222"
+      },
+      "startedAt" : "2026-01-09T00:00:00.000Z",
+      "state" : "completed",
+      "timeZoneIdentifier" : "America\/New_York",
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    }
+  ],
+  "templates" : [
+    {
+      "createdAt" : "2026-01-01T00:00:00.000Z",
+      "exercises" : [
+        {
+          "exerciseId" : "1E745624-563E-59EB-8458-DD9D29D3CC25",
+          "id" : "22222222-2222-4222-8222-000000000001",
+          "restSeconds" : 90,
+          "sets" : [
+            {
+              "id" : "22222222-2222-4222-8222-000000000011",
+              "targetReps" : {
+                "max" : 10,
+                "min" : 10
+              },
+              "type" : "warmup"
+            },
+            {
+              "id" : "22222222-2222-4222-8222-000000000012",
+              "targetLoad" : {
+                "unit" : "kg",
+                "value" : 100
+              },
+              "targetReps" : {
+                "max" : 8,
+                "min" : 5
+              },
+              "type" : "working"
+            }
+          ]
+        }
+      ],
+      "id" : "22222222-2222-4222-8222-222222222222",
+      "name" : "Push",
+      "revision" : 1,
+      "updatedAt" : "2026-01-01T00:00:00.000Z"
+    }
+  ]
+}

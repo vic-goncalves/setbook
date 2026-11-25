@@ -1,0 +1,14 @@
+.DS_Store
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+.build/
+.swiftpm/
+Packages/SetbookKit/Package.resolved
+
+# Local server secrets
+server/.dev.vars
+server/.wrangler/
+server/node_modules/
+web/node_modules/
+web/dist/

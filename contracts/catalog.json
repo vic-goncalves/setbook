@@ -1,0 +1,694 @@
+[
+  {
+    "equipment" : "barbell",
+    "id" : "1E745624-563E-59EB-8458-DD9D29D3CC25",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bench Press (Barbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "15173B6A-6AD3-5BFF-A77C-0A021EB794D5",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Incline Bench Press (Barbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "1050E6EF-67A0-5B2F-941E-7E2357C05F0D",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Decline Bench Press (Barbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "A5F44358-3AAF-5593-8B6B-F938531DF769",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bench Press (Dumbbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "DB92DAD2-51E8-5ABB-8B4B-C359AAF9350A",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Incline Bench Press (Dumbbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "2AE431F1-998C-56CE-B5A4-900F8575D28B",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Fly (Dumbbell)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "48254DC5-5E6F-5848-9FD1-73E8C11DD941",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Cable Crossover",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "F51AB7F1-F7D0-5C0E-BD65-1EBAC54C5E6D",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Chest Press (Machine)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "8DCA8E69-C178-5AAD-86A1-6737246FB35B",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Pec Deck (Machine)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "05FEA079-049B-5399-8C4C-2624D84DA20A",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Push-up",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "14195FDF-CAB1-5D6D-BE72-2D72E3652F1F",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Dip",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "FA9CFF75-2E27-5BF7-973F-228BC08AE020",
+    "measurement" : {
+      "loadConvention" : "added",
+      "type" : "weighted_bodyweight_reps"
+    },
+    "name" : "Dip (Weighted)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "7BE12567-1FDE-536A-8B88-4C59612F81D7",
+    "measurement" : {
+      "loadConvention" : "assistance",
+      "type" : "assisted_bodyweight_reps"
+    },
+    "name" : "Dip (Assisted)",
+    "primaryMuscle" : "chest"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "8D9B6732-35BC-54EE-9A7B-2E8D789926BF",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Deadlift (Barbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "ADB6D91E-7148-5D07-8257-6D189C70AD55",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bent Over Row (Barbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "5F26BE26-F46D-53E4-B5DA-1D7BD76B2F66",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Pendlay Row (Barbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "37BE4594-E9CA-578E-B10D-535DE4FAD337",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "One Arm Row (Dumbbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "A2D90145-7770-5086-B4BB-2FEDC551C64A",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Seated Row (Cable)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "9E4DB597-BB10-50AB-9C11-F3D28248A916",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Lat Pulldown (Cable)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "591BD22F-8557-5334-90B9-785FA22497B8",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Row (Machine)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "7392BDCA-7F65-5D57-AE96-6A796E98C898",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "T-Bar Row",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "BF82E039-0C71-5DE1-B243-A15B551B9690",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Pull-up",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "A7C41E81-06F5-5F84-9F4C-A28B67086373",
+    "measurement" : {
+      "loadConvention" : "added",
+      "type" : "weighted_bodyweight_reps"
+    },
+    "name" : "Pull-up (Weighted)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "1495D7A2-05D1-5572-A687-BD4D2D4755F4",
+    "measurement" : {
+      "loadConvention" : "assistance",
+      "type" : "assisted_bodyweight_reps"
+    },
+    "name" : "Pull-up (Assisted)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "C851DA21-73AB-5BCD-BA1C-74E1854A1C2B",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Chin-up",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "4C0BACBC-B883-5E8E-8E6F-479074D52A51",
+    "measurement" : {
+      "loadConvention" : "added",
+      "type" : "weighted_bodyweight_reps"
+    },
+    "name" : "Chin-up (Weighted)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "658998D1-6098-5F59-B73E-183BD424F2B3",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Back Extension",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "B09CBE8C-D3CA-5389-AE57-65C7EBCE092A",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Face Pull (Cable)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "80836B57-3F62-542F-8B4B-182A7B6B1DE1",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Overhead Press (Barbell)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "EC32B212-B266-553E-98A3-1491C2712759",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Shoulder Press (Dumbbell)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "16A341CD-527D-53A0-B7CE-ACC8D8531F44",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Shoulder Press (Machine)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "04B5B0F7-2621-5421-9341-4CD55DF58D66",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Lateral Raise (Dumbbell)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "B033E94F-66C2-5E8E-9AE8-23CF3675C4EC",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Lateral Raise (Cable)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "63D4BE57-591E-5FC0-835F-A2D698248DC9",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Reverse Fly (Dumbbell)",
+    "primaryMuscle" : "shoulders"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "181FF6C4-171A-5C5C-88DA-CD199A9B6B61",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Shrug (Barbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "B32DBC46-78EA-553F-B041-4AF665BCCA94",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Shrug (Dumbbell)",
+    "primaryMuscle" : "back"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "949C2D81-769C-5F7C-ACC6-9CF6709BA64F",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bicep Curl (Barbell)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "ez_bar",
+    "id" : "15AE3E16-7926-5E59-AB3A-788C69553A3C",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bicep Curl (EZ Bar)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "E641382D-B89B-5CED-A135-9A7B2C26DEE0",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bicep Curl (Dumbbell)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "55BA1DDF-113A-583F-9184-9763F9FDAA72",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Hammer Curl (Dumbbell)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "ez_bar",
+    "id" : "A3881586-C8C6-57B3-8464-562B35089A16",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Preacher Curl (EZ Bar)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "C53020A2-4005-5739-9B3A-445EF03EFFE9",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bicep Curl (Cable)",
+    "primaryMuscle" : "biceps"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "F30554E2-BE18-5415-98E5-7C93AB0B4B08",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Triceps Pushdown (Cable)",
+    "primaryMuscle" : "triceps"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "33887959-2310-51BD-B896-09ABEF8F4A38",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Overhead Triceps Extension (Cable)",
+    "primaryMuscle" : "triceps"
+  },
+  {
+    "equipment" : "ez_bar",
+    "id" : "2422963C-30E5-5409-B180-AACB2F6B23BD",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Skull Crusher (EZ Bar)",
+    "primaryMuscle" : "triceps"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "F6632B36-F515-5CCD-A30E-26DA1B042FC1",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Close Grip Bench Press (Barbell)",
+    "primaryMuscle" : "triceps"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "F094E943-E4C4-51A0-970F-200144EB65ED",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Wrist Curl (Dumbbell)",
+    "primaryMuscle" : "forearms"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "8CBAFCDB-B9A8-56E2-A0C1-836A4AD1D6F6",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Squat (Barbell)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "159946A6-BB4B-5927-A32C-996E772F4059",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Front Squat (Barbell)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "BADB3E6B-B51F-5FBF-9C49-7472168BBB07",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Goblet Squat (Dumbbell)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "160864DC-137B-5FCF-8DB9-430FF370D2BF",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Leg Press (Machine)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "E0BB3F4E-EA09-57D3-88D6-67751467D591",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Hack Squat (Machine)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "7D0291C6-BD6E-50B3-A50A-68B0A156A1FA",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Leg Extension (Machine)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "24FE346B-C183-50D0-8EA9-56487D2B8165",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Bulgarian Split Squat (Dumbbell)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "4BD638D8-E892-5A31-B582-0500E7CB976C",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Lunge (Dumbbell)",
+    "primaryMuscle" : "quads"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "B13A0FF5-D992-5045-AF21-201A18A9C97A",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Romanian Deadlift (Barbell)",
+    "primaryMuscle" : "hamstrings"
+  },
+  {
+    "equipment" : "dumbbell",
+    "id" : "2A730A79-EC12-5FC7-ADBC-B7D9040AFC8F",
+    "measurement" : {
+      "loadConvention" : "per_hand",
+      "type" : "external_load_reps"
+    },
+    "name" : "Romanian Deadlift (Dumbbell)",
+    "primaryMuscle" : "hamstrings"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "AF0AFA79-F871-5E7B-9638-2EA5A4529EA1",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Lying Leg Curl (Machine)",
+    "primaryMuscle" : "hamstrings"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "F1A0DDC9-048B-5863-9483-F41715F08B90",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Seated Leg Curl (Machine)",
+    "primaryMuscle" : "hamstrings"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "CAE23D4F-93A2-54BE-BC35-FFDC52001C46",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Hip Thrust (Barbell)",
+    "primaryMuscle" : "glutes"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "FDA56A3D-9F89-5465-AB43-2697F13857D0",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Sumo Deadlift (Barbell)",
+    "primaryMuscle" : "glutes"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "D365F238-1F04-5CB7-B30E-80DF0F9D6697",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Hip Abduction (Machine)",
+    "primaryMuscle" : "glutes"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "50A56641-FB95-5ABB-9F27-1E4BCA073147",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Standing Calf Raise (Machine)",
+    "primaryMuscle" : "calves"
+  },
+  {
+    "equipment" : "machine",
+    "id" : "5F9949FB-5711-514D-B089-F155ED3D5365",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Seated Calf Raise (Machine)",
+    "primaryMuscle" : "calves"
+  },
+  {
+    "equipment" : "cable",
+    "id" : "474725BC-7D7E-5DC7-A0E0-5A5807FFF102",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Crunch (Cable)",
+    "primaryMuscle" : "core"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "4E08D83E-0743-53DB-8EDC-1155AA1EA291",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Hanging Leg Raise",
+    "primaryMuscle" : "core"
+  },
+  {
+    "equipment" : "bodyweight",
+    "id" : "50D35985-781D-587B-BE57-70D5D4515980",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Crunch",
+    "primaryMuscle" : "core"
+  },
+  {
+    "equipment" : "other",
+    "id" : "C69C6C30-757A-5F74-89A8-9985443A2117",
+    "measurement" : {
+      "type" : "bodyweight_reps"
+    },
+    "name" : "Ab Wheel Rollout",
+    "primaryMuscle" : "core"
+  },
+  {
+    "equipment" : "kettlebell",
+    "id" : "AACAAA0B-598E-537F-AEF3-26C6605130D5",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Kettlebell Swing",
+    "primaryMuscle" : "full_body"
+  },
+  {
+    "equipment" : "barbell",
+    "id" : "EF18D5A0-CF48-51CB-ADC6-8C2D63F949BE",
+    "measurement" : {
+      "loadConvention" : "total",
+      "type" : "external_load_reps"
+    },
+    "name" : "Power Clean (Barbell)",
+    "primaryMuscle" : "full_body"
+  }
+]

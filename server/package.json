@@ -1,0 +1,26 @@
+{
+  "name": "setbook-server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "migrate:local": "wrangler d1 migrations apply setbook --local",
+    "migrate:remote": "wrangler d1 migrations apply setbook --remote",
+    "deploy": "npm run build:web && wrangler deploy",
+    "build:web": "cd ../web && npm run build"
+  },
+  "dependencies": {
+    "hono": "^4.13.22",
+    "jose": "^5.10.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.9.2",
+    "@cloudflare/workers-types": "^5.20261125.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.168.0"
+  }
+}

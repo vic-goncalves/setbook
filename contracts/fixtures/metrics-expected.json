@@ -1,0 +1,89 @@
+{
+  "assistedVolume" : [
+
+  ],
+  "bestRepsAt100kg" : [
+    {
+      "reps" : 6,
+      "sessionId" : "44444444-4444-4444-8444-000000000001",
+      "value" : 6
+    },
+    {
+      "reps" : 7,
+      "sessionId" : "44444444-4444-4444-8444-000000000002",
+      "value" : 7
+    }
+  ],
+  "dailyMeans" : [
+    {
+      "count" : 2,
+      "day" : "2026-01-01",
+      "meanKilograms" : 80.5
+    },
+    {
+      "count" : 1,
+      "day" : "2026-01-03",
+      "meanKilograms" : 81.011597
+    },
+    {
+      "count" : 1,
+      "day" : "2026-01-10",
+      "meanKilograms" : 79
+    }
+  ],
+  "heaviestSet" : [
+    {
+      "reps" : 6,
+      "sessionId" : "44444444-4444-4444-8444-000000000001",
+      "value" : 100
+    },
+    {
+      "reps" : 3,
+      "sessionId" : "44444444-4444-4444-8444-000000000002",
+      "value" : 102.058283
+    },
+    {
+      "reps" : 5,
+      "sessionId" : "44444444-4444-4444-8444-000000000003",
+      "value" : 105
+    }
+  ],
+  "leastAssistance" : [
+    {
+      "reps" : 6,
+      "sessionId" : "44444444-4444-4444-8444-000000000003",
+      "value" : 25
+    }
+  ],
+  "rollingAverage" : [
+    {
+      "day" : "2026-01-01",
+      "kilograms" : 80.5,
+      "observedDays" : 1
+    },
+    {
+      "day" : "2026-01-03",
+      "kilograms" : 80.755799,
+      "observedDays" : 2
+    },
+    {
+      "day" : "2026-01-10",
+      "kilograms" : 79,
+      "observedDays" : 1
+    }
+  ],
+  "volume" : [
+    {
+      "sessionId" : "44444444-4444-4444-8444-000000000001",
+      "value" : 1100
+    },
+    {
+      "sessionId" : "44444444-4444-4444-8444-000000000002",
+      "value" : 1006.174849
+    },
+    {
+      "sessionId" : "44444444-4444-4444-8444-000000000003",
+      "value" : 525
+    }
+  ]
+}
