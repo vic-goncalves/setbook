@@ -43,11 +43,12 @@ export function TemplateEditor({ id }: { id: string }) {
 
   return (
     <>
-      <div className="row" style={{ padding: '16px 0' }}>
+      <div className="app-bar">
         <button className="btn btn-ghost" onClick={() => (changed && draft.name ? setDiscarding(true) : back('/train'))}>Cancel</button>
-        <strong className="spacer" style={{ textAlign: 'center' }}>{existing ? 'Edit template' : 'New template'}</strong>
+        <div className="title-slot">{existing ? 'Edit template' : 'New template'}</div>
         <button className="pill" disabled={!canSave} onClick={save}>Save</button>
       </div>
+      <div style={{ height: 16 }} />
       <input className="bare title" placeholder="Template name, e.g. Push" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="Template name" autoFocus={!existing} />
       <textarea className="bare subtle" style={{ marginTop: 8, resize: 'none' }} rows={1} placeholder="Notes" value={draft.notes ?? ''}
         onChange={(e) => setDraft(strip({ ...draft, notes: e.target.value || undefined }))} aria-label="Template notes" />

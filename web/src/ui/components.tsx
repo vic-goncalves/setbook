@@ -95,6 +95,24 @@ export function Confirm({ title, message, confirm, danger = true, onConfirm, onC
   )
 }
 
+/** iOS-style action sheet: a list of choices with a separate Cancel. */
+export function ActionSheet({ title, actions, onClose }: { title: string; actions: { label: string; run: () => void; danger?: boolean }[]; onClose: () => void }) {
+  return (
+    <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} style={{ paddingTop: 12 }}>
+        <div className="small subtle" style={{ textAlign: 'center', padding: '6px 0 12px' }}>{title}</div>
+        <div className="card list" style={{ padding: '0 16px' }}>
+          {actions.map((a) => (
+            <button key={a.label} className="list-row" style={{ justifyContent: 'center', color: a.danger ? 'var(--danger)' : undefined, fontWeight: 500 }}
+              onClick={() => { onClose(); a.run() }}>{a.label}</button>
+          ))}
+        </div>
+        <button className="btn btn-secondary" style={{ marginTop: 10, minHeight: 52 }} onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
 export function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 3500)

@@ -5,7 +5,7 @@ import { mass, stopwatch } from '../format'
 import { usePrefs } from '../prefs'
 import { navigate } from '../router'
 import { store, useStore } from '../store'
-import { Confirm, EmptyState, Sheet, Stat } from '../ui/components'
+import { ActionSheet, Confirm, EmptyState, Sheet, Stat } from '../ui/components'
 import { Icon } from '../ui/icons'
 
 export function WorkoutDetail({ id, onToast }: { id: string; onToast: (m: string) => void }) {
@@ -14,6 +14,7 @@ export function WorkoutDetail({ id, onToast }: { id: string; onToast: (m: string
   const session = data.sessions.find((s) => s.id === id)
   const [deleting, setDeleting] = useState(false)
   const [naming, setNaming] = useState<string>()
+  const [menu, setMenu] = useState(false)
   if (!session) return <EmptyState title="Workout not found" message="It may have been deleted on another device." action={<a className="pill" href="#/history">Back to History</a>} />
   const active = data.sessions.some((s) => s.state === 'active')
 
@@ -31,13 +32,18 @@ export function WorkoutDetail({ id, onToast }: { id: string; onToast: (m: string
 
   return (
     <>
-      <div className="row" style={{ padding: '14px 0 0' }}>
-        <a className="btn btn-ghost" href="#/history"><Icon name="back" size={16} /> History</a>
+      <div className="row" style={{ padding: '10px 0 0', marginLeft: -8 }}>
+        <a className="btn btn-ghost" href="#/history"><Icon name="back" size={18} /> History</a>
         <span className="spacer" />
-        <a className="btn btn-ghost" href={`#/history/${id}/edit`}>Edit</a>
-        <button className="btn btn-ghost" onClick={() => setNaming(session.name)}>Save as template</button>
-        <button className="icon-button" onClick={() => setDeleting(true)} aria-label="Delete workout"><Icon name="trash" size={16} /></button>
+        <button className="icon-button" onClick={() => setMenu(true)} aria-label="Workout actions"><Icon name="more" size={22} stroke={3} /></button>
       </div>
+      {menu && (
+        <ActionSheet title={session.name} onClose={() => setMenu(false)} actions={[
+          { label: 'Edit workout', run: () => navigate(`/history/${id}/edit`) },
+          { label: 'Save as template', run: () => setNaming(session.name) },
+          { label: 'Delete workout', run: () => setDeleting(true), danger: true },
+        ]} />
+      )}
       <header className="page-header">
         <div className="eyebrow">{new Date(session.startedAt).toLocaleString(undefined, { dateStyle: 'full', timeStyle: 'short', timeZone: session.timeZoneIdentifier })}</div>
         <h1 className="title">{session.name}</h1>

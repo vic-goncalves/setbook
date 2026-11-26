@@ -9,6 +9,7 @@ import { store, useStore } from '../store'
 import { Chips, Confirm, EmptyState, SectionHead, Sheet } from '../ui/components'
 import { LineChart } from '../ui/chart'
 import { Icon } from '../ui/icons'
+import { SwipeRow } from '../ui/swipe'
 
 export function BodyWeight() {
   const data = useStore()
@@ -65,20 +66,22 @@ export function BodyWeight() {
             </SectionHead>
             <div className="list">
               {(showAll ? entries : entries.slice(0, 8)).map((e) => (
-                <button key={e.id} className="list-row" onClick={() => setEditing(e)}>
+                <SwipeRow key={e.id} onDelete={() => store.remove('measurement', e.id)}>
+                <button className="list-row" style={{ background: 'var(--bg)' }} onClick={() => setEditing(e)}>
                   <div className="spacer">
                     <div className="small">{new Date(e.measuredAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: e.timeZoneIdentifier })}</div>
                     <div className="tiny faint">{[new Date(e.measuredAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: e.timeZoneIdentifier }), e.note].filter(Boolean).join(', ')}</div>
                   </div>
                   <span className="num" style={{ fontWeight: 500 }}>{mass(e.mass, unit)}</span>
                 </button>
+                </SwipeRow>
               ))}
             </div>
           </section>
         </div>
       )}
       {entries.length > 0 && (
-        <div style={{ position: 'sticky', bottom: 80, marginTop: 24 }}>
+        <div style={{ position: 'sticky', bottom: 'calc(var(--tabbar) + 12px)', marginTop: 24, zIndex: 5 }}>
           <button className="btn btn-primary" onClick={() => setEditing('new')}><Icon name="plus" size={16} /> Log weight</button>
         </div>
       )}

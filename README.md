@@ -40,7 +40,15 @@ To set it up on a fork:
 
 The same web client serves the iPhone app too: the phone opens the sign-in page in the system browser sheet and receives a one-time code at `setbook://auth`, which only that phone can redeem (PKCE).
 
-## iPhone app
+## Web app on your iPhone (recommended)
+
+Open https://vic-goncalves.github.io/setbook/ in Safari, tap Share, then **Add to Home Screen**. It launches full-screen with the Setbook icon, never expires, and updates itself on every deploy.
+
+- Works offline: the app loads without signal, your data is kept on the phone (IndexedDB), and edits sync when you're back online.
+- Keeps the screen awake during a workout, ticks a haptic when you complete a set (iOS 18+), and the number pad's Return moves weight -> reps -> next set.
+- Swipe a set or weigh-in left to delete it.
+
+## Native iPhone app
 
 ```sh
 brew install xcodegen

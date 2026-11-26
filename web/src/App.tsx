@@ -73,7 +73,14 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
   const data = useStore()
   const [toast, setToast] = useState<string>()
   const section = route[0] ?? 'train'
-  const tabs: [string, string][] = [['train', 'Train'], ['history', 'History'], ['progress', 'Progress']]
+  // The workout and the template editor take the whole screen with their own top bar,
+  // like full-screen flows in iOS apps.
+  const immersive = section === 'workout' || section === 'templates' || (section === 'history' && route[2] === 'edit')
+  const tabs: [string, string, 'dumbbell' | 'calendar' | 'chart'][] = [['train', 'Train', 'dumbbell'], ['history', 'History', 'calendar'], ['progress', 'Progress', 'chart']]
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('immersive', immersive)
+  }, [immersive])
 
   let page
   if (data.status === 'loading') page = <div className="spinner" />
@@ -94,29 +101,36 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
 
   return (
     <>
-      <nav className="topbar" aria-label="Primary">
-        <div className="topbar-inner">
-          <a className="brand" href="#/train"><span className="brand-mark"><Icon name="dumbbell" size={16} /></span>Setbook</a>
-          {tabs.map(([key, label]) => (
-            <a key={key} className={`tab${section === key ? ' active' : ''}`} href={`#/${key}`} aria-current={section === key ? 'page' : undefined}>{label}</a>
-          ))}
-          <SyncIndicator />
-          <a className="icon-button" href="#/settings" aria-label="Settings"><Icon name="gear" /></a>
-        </div>
-      </nav>
+      {!immersive && (
+        <nav className="topbar" aria-label="Primary">
+          <div className="topbar-inner">
+            <a className="brand" href="#/train"><span className="brand-mark"><Icon name="dumbbell" size={16} /></span>Setbook</a>
+            {tabs.map(([key, label]) => (
+              <a key={key} className={`tab${section === key ? ' active' : ''}`} href={`#/${key}`} aria-current={section === key ? 'page' : undefined}>{label}</a>
+            ))}
+            <SyncIndicator />
+            <a className="icon-button" href="#/settings" aria-label="Settings"><Icon name="gear" size={20} /></a>
+          </div>
+        </nav>
+      )}
       <main className="shell">
-        {data.conflicts.length > 0 && section !== 'settings' && (
+        {data.conflicts.length > 0 && section !== 'settings' && !immersive && (
           <button className="banner warn" style={{ width: '100%', textAlign: 'left' }} onClick={() => navigate('/settings')}>
             {data.conflicts.length} change{data.conflicts.length === 1 ? '' : 's'} need your choice before they can sync. Review in Settings.
           </button>
         )}
-        {page}
+        <div className="page" key={route.join('/')}>{page}</div>
       </main>
-      <nav className="bottom-tabs" aria-label="Sections">
-        {tabs.map(([key, label]) => (
-          <a key={key} className={`tab${section === key ? ' active' : ''}`} href={`#/${key}`}>{label}</a>
-        ))}
-      </nav>
+      {!immersive && (
+        <nav className="tabbar" aria-label="Sections">
+          {tabs.map(([key, label, icon]) => (
+            <a key={key} className={section === key ? 'active' : undefined} href={`#/${key}`} aria-current={section === key ? 'page' : undefined}>
+              <Icon name={icon} size={24} stroke={section === key ? 2.4 : 1.8} />
+              {label}
+            </a>
+          ))}
+        </nav>
+      )}
       {toast && <Toast message={toast} onDone={() => setToast(undefined)} />}
     </>
   )

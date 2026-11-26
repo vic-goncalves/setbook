@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { api, type Mutation, type MutationResult, type PullPage } from './api'
+import { api, currentUser, type Mutation, type MutationResult, type PullPage } from './api'
+import { persist } from './persist'
 import type { BodyMeasurement, Entity, EntityBody, Exercise, WorkoutSession, WorkoutTemplate } from './domain/types'
 import { builtInExercises } from './domain/catalog'
 
@@ -33,7 +34,18 @@ export interface Snapshot {
 }
 
 const PUSH_DELAY = 800
+const RETRY_DELAY = 15_000
 const POLL_INTERVAL = 30_000
+const SAVE_KEY = 'store'
+
+/** What survives a restart: every record, the pull cursor, unsynced edits and open conflicts. */
+interface Saved {
+  userId: string
+  cursor: number
+  records: Record<Entity, [string, Item][]>
+  dirty: [string, { entity: Entity; id: string; deleted: boolean }][]
+  conflicts: [string, Conflict][]
+}
 
 /**
  * The signed-in user's records, mirrored from the server. Edits apply locally at once, then
@@ -59,27 +71,85 @@ class Store {
 
   getSnapshot = () => this.snapshot
 
+  /**
+   * Shows the copy saved on this device straight away (so the app opens offline), then
+   * catches up with the server and resumes any unsynced edits.
+   */
   async start() {
     this.reset()
+    const hydrated = await this.hydrate()
+    if (hydrated) {
+      this.state = { ...this.state, status: 'ready' }
+      this.emit()
+      for (const key of this.dirty.keys()) this.schedule(key, 0)
+    }
     try {
       await this.pull()
-      this.state = { ...this.state, status: 'ready', lastSyncedAt: Date.now() }
+      this.state = { ...this.state, status: 'ready', lastSyncedAt: Date.now(), syncError: undefined }
     } catch (error) {
-      this.state = { ...this.state, status: 'error', error: (error as Error).message }
+      this.state = hydrated
+        ? { ...this.state, syncError: offlineMessage(error) }
+        : { ...this.state, status: 'error', error: (error as Error).message }
     }
     this.emit()
     this.poller = setInterval(() => void this.refresh(), POLL_INTERVAL)
-    window.addEventListener('focus', this.onFocus)
+    window.addEventListener('online', this.onOnline)
+    document.addEventListener('visibilitychange', this.onVisible)
   }
 
   stop() {
     clearInterval(this.poller)
-    window.removeEventListener('focus', this.onFocus)
+    window.removeEventListener('online', this.onOnline)
+    document.removeEventListener('visibilitychange', this.onVisible)
     this.timers.forEach(clearTimeout)
     this.reset()
   }
 
-  private onFocus = () => void this.refresh()
+  /** Forgets this device's copy, e.g. on sign-out or account deletion. */
+  async clearLocal() {
+    await persist.remove(SAVE_KEY)
+  }
+
+  private onOnline = () => {
+    for (const key of this.dirty.keys()) this.schedule(key, 0)
+    void this.refresh()
+  }
+
+  private onVisible = () => {
+    if (document.visibilityState === 'visible') this.onOnline()
+  }
+
+  private async hydrate(): Promise<boolean> {
+    const saved = await persist.get<Saved>(SAVE_KEY)
+    const userId = currentUser()?.id
+    if (!saved || saved.userId !== userId) return false
+    for (const entity of Object.keys(this.records) as Entity[]) {
+      this.records[entity] = new Map(saved.records[entity] ?? [])
+    }
+    this.cursor = saved.cursor
+    this.dirty = new Map(saved.dirty)
+    this.conflicts = new Map(saved.conflicts)
+    return true
+  }
+
+  private saveTimer?: ReturnType<typeof setTimeout>
+
+  private persistLocally() {
+    const userId = currentUser()?.id
+    if (!userId || this.state.status !== 'ready') return
+    clearTimeout(this.saveTimer)
+    this.saveTimer = setTimeout(() => {
+      const records = Object.fromEntries(Object.entries(this.records).map(([e, m]) => [e, [...m.entries()]])) as Saved['records']
+      // In-flight writes are saved as dirty too: if the app closes mid-push, it resends on
+      // next launch (with a fresh mutation ID, against the revision it last knew).
+      const dirty = new Map(this.dirty)
+      for (const key of this.inFlight) {
+        const [entity, id] = key.split('/') as [Entity, string]
+        if (!dirty.has(key)) dirty.set(key, { entity, id, deleted: this.records[entity].get(id)?.body === undefined })
+      }
+      void persist.set(SAVE_KEY, { userId, cursor: this.cursor, records, dirty: [...dirty], conflicts: [...this.conflicts] } satisfies Saved)
+    }, 250)
+  }
 
   private reset() {
     for (const map of Object.values(this.records)) map.clear()
@@ -113,7 +183,7 @@ class Store {
       await this.pull()
       this.state = { ...this.state, lastSyncedAt: Date.now(), syncError: undefined }
     } catch (error) {
-      this.state = { ...this.state, syncError: (error as Error).message }
+      this.state = { ...this.state, syncError: offlineMessage(error) }
     } finally {
       this.state = { ...this.state, syncing: false }
       this.emit()
@@ -138,9 +208,13 @@ class Store {
   private markDirty(entity: Entity, id: string, deleted: boolean) {
     const key = `${entity}/${id}`
     this.dirty.set(key, { entity, id, deleted })
-    clearTimeout(this.timers.get(key))
-    this.timers.set(key, setTimeout(() => void this.flush(key), PUSH_DELAY))
+    this.schedule(key, PUSH_DELAY)
     this.emit()
+  }
+
+  private schedule(key: string, delay: number) {
+    clearTimeout(this.timers.get(key))
+    this.timers.set(key, setTimeout(() => void this.flush(key), delay))
   }
 
   private async flush(key: string) {
@@ -160,14 +234,15 @@ class Store {
     this.inFlight.add(key)
     this.state = { ...this.state, syncing: true }
     this.emit()
+    let retryLater = false
     try {
       let result: MutationResult | undefined
-      // Retry the same mutation ID on network failure; the server de-duplicates it.
-      for (let attempt = 0; attempt < 5 && !result; attempt++) {
+      // Retry the same mutation ID a few times; the server de-duplicates it.
+      for (let attempt = 0; attempt < 3 && !result; attempt++) {
         try {
           result = (await api<{ results: MutationResult[] }>('POST', '/v1/sync/push', { mutations: [mutation] })).results[0]
         } catch (error) {
-          if (attempt === 4) throw error
+          if (attempt === 2 || !navigator.onLine) throw error
           await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt))
         }
       }
@@ -189,15 +264,15 @@ class Store {
         this.dirty.set(key, { ...entry, deleted: current.body === undefined })
       }
     } catch (error) {
-      this.dirty.set(key, entry)
-      this.state = { ...this.state, syncError: `Couldn't sync: ${(error as Error).message}` }
+      if (!this.dirty.has(key)) this.dirty.set(key, entry)
+      this.state = { ...this.state, syncError: offlineMessage(error) }
+      retryLater = true
     } finally {
       this.inFlight.delete(key)
       this.state = { ...this.state, syncing: this.inFlight.size > 0 }
       this.emit()
-      if (this.dirty.has(key) && !this.conflicts.has(key)) {
-        this.timers.set(key, setTimeout(() => void this.flush(key), PUSH_DELAY))
-      }
+      // Offline: wait for the connection (the 'online' event) or a slow retry, not a tight loop.
+      if (this.dirty.has(key) && !this.conflicts.has(key)) this.schedule(key, retryLater ? RETRY_DELAY : PUSH_DELAY)
     }
   }
 
@@ -226,6 +301,7 @@ class Store {
   private emit() {
     this.snapshot = this.build()
     this.listeners.forEach((l) => l())
+    this.persistLocally()
   }
 
   private build(): Snapshot {
@@ -244,6 +320,12 @@ class Store {
       conflicts: [...this.conflicts.values()],
     }
   }
+}
+
+function offlineMessage(error: unknown): string {
+  return !navigator.onLine || error instanceof TypeError
+    ? 'Offline. Changes are saved on this device and will sync when you reconnect.'
+    : `Couldn't sync: ${(error as Error).message}`
 }
 
 export const store = new Store()

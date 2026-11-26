@@ -27,12 +27,15 @@ func drawDumbbell(_ ctx: CGContext, color: CGColor) {
     }
 }
 
-func render(_ name: String, background: CGColor?, glyph: CGColor, opaque: Bool) throws {
+func render(_ name: String, background: CGColor?, glyph: CGColor, opaque: Bool, pixels: Int = 1024) throws {
     let space = CGColorSpace(name: CGColorSpace.sRGB)!
     let info: UInt32 = opaque ? CGImageAlphaInfo.noneSkipLast.rawValue : CGImageAlphaInfo.premultipliedLast.rawValue
-    guard let ctx = CGContext(data: nil, width: Int(size), height: Int(size), bitsPerComponent: 8, bytesPerRow: 0, space: space, bitmapInfo: info) else {
+    guard let ctx = CGContext(data: nil, width: pixels, height: pixels, bitsPerComponent: 8, bytesPerRow: 0, space: space, bitmapInfo: info) else {
         throw NSError(domain: "icon", code: 1)
     }
+    // Drawing is in 1024-point space; scale down for smaller outputs.
+    ctx.scaleBy(x: Double(pixels) / size, y: Double(pixels) / size)
+    ctx.interpolationQuality = .high
     if let background {
         ctx.setFillColor(background)
         ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
@@ -55,5 +58,7 @@ try render("\(dir)/AppIcon.png", background: paper, glyph: ink, opaque: true)
 try render("\(dir)/AppIcon-Dark.png", background: nil, glyph: paper, opaque: false)
 // Tinted home screen: a grayscale glyph that iOS colors with the user's tint.
 try render("\(dir)/AppIcon-Tinted.png", background: nil, glyph: CGColor(gray: 1, alpha: 1), opaque: false)
-// Web: home-screen icon for Safari's "Add to Home Screen".
-try render("web/public/apple-touch-icon.png", background: paper, glyph: ink, opaque: true)
+// Web: home-screen icons for Safari's "Add to Home Screen" and the web app manifest.
+try render("web/public/apple-touch-icon.png", background: paper, glyph: ink, opaque: true, pixels: 180)
+try render("web/public/icon-192.png", background: paper, glyph: ink, opaque: true, pixels: 192)
+try render("web/public/icon-512.png", background: paper, glyph: ink, opaque: true, pixels: 512)

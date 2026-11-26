@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { keepAwake, tap } from '../device'
+import { SwipeRow } from '../ui/swipe'
 import { loadExplanation, loadLabel } from '../domain/catalog'
 import {
   addSet, completeSet, completedSetCount, counterpart, finishSession, incompleteSetCount, placeholder,
@@ -10,7 +12,7 @@ import { clock, duration, mass, parseDecimal, parseInteger, relativeDay, setText
 import { adjustRest, clearRest, startRest, usePrefs } from '../prefs'
 import { back, navigate } from '../router'
 import { store, useStore } from '../store'
-import { Confirm, EmptyState, Sheet, Stat, useNow } from '../ui/components'
+import { ActionSheet, Confirm, EmptyState, Sheet, Stat, useNow } from '../ui/components'
 import { Icon } from '../ui/icons'
 import { ExercisePicker } from './ExercisePicker'
 
@@ -53,6 +55,18 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
     })
   }, [data.sessions, session.id, session.exercises.map((e) => e.exerciseId).join()])
 
+  // Keep the screen on while logging; iOS releases the lock when the app is hidden, so ask again on return.
+  useEffect(() => {
+    if (editing) return
+    void keepAwake(true)
+    const again = () => document.visibilityState === 'visible' && void keepAwake(true)
+    document.addEventListener('visibilitychange', again)
+    return () => {
+      document.removeEventListener('visibilitychange', again)
+      void keepAwake(false)
+    }
+  }, [editing])
+
   const updateExercise = (index: number, next: WorkoutExercise) => write({ ...session, exercises: session.exercises.map((e, i) => (i === index ? next : e)) })
   const done = completedSetCount(session)
   const total = done + incompleteSetCount(session)
@@ -60,13 +74,13 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
   const toggleComplete = (ei: number, si: number) => {
     const exercise = session.exercises[ei]!
     const set = exercise.sets[si]!
+    tap()
     if (set.completedAt) return updateExercise(ei, { ...exercise, sets: exercise.sets.map((s, i) => (i === si ? strip({ ...s, completedAt: undefined }) : s)) })
     const result = completeSet(exercise, si, counterpart(previous[ei], exercise.sets, si))
     if (typeof result === 'string') return setRejected({ set: set.id, message: result })
     setRejected(undefined)
     updateExercise(ei, result)
     if (!editing && exercise.restSeconds) startRest(exercise.restSeconds)
-    navigator.vibrate?.(15)
   }
 
   const requestFinish = () => {
@@ -84,9 +98,9 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
 
   return (
     <>
-      <div className="row" style={{ position: 'sticky', top: 57, zIndex: 15, background: 'var(--bg)', padding: '10px 0', borderBottom: '1px solid var(--hairline)' }}>
-        {editing ? <button className="btn btn-ghost" onClick={() => back('/history')}>Cancel</button> : <a className="btn btn-ghost" href="#/train"><Icon name="down" /> Minimize</a>}
-        <div className="spacer num" style={{ textAlign: 'center', fontWeight: 600 }}>
+      <div className="app-bar">
+        {editing ? <button className="btn btn-ghost" onClick={() => back('/history')}>Cancel</button> : <a className="btn btn-ghost" href="#/train" aria-label="Minimize workout"><Icon name="down" size={22} /></a>}
+        <div className="title-slot num">
           {editing ? 'Edit workout' : stopwatch(now - Date.parse(session.startedAt))}
         </div>
         {editing ? (
@@ -101,7 +115,7 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
         )}
       </div>
 
-      <input className="bare title" style={{ marginTop: 20 }} value={session.name} aria-label="Workout name"
+      <input className="bare title" style={{ marginTop: 16 }} value={session.name} aria-label="Workout name"
         onChange={(e) => write({ ...session, name: e.target.value || 'Workout' })} />
       {editing ? (
         <div className="card" style={{ marginTop: 12, padding: 12 }}>
@@ -169,6 +183,7 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
   previous: ReturnType<typeof previousPerformance>; rejected?: { set: string; message: string }
   onChange: (e: WorkoutExercise) => void; onComplete: (setIndex: number) => void; onMove: (by: number) => void; onRemove: () => void
 }) {
+  const [menu, setMenu] = useState(false)
   const hasLoad = tracksLoad(exercise.measurement)
   const label = loadLabel(exercise.measurement)
   const loadColumn = exercise.measurement.loadConvention === 'per_hand' ? `${unit}/hand` : exercise.measurement.loadConvention === 'added' ? `+${unit}` : exercise.measurement.loadConvention === 'assistance' ? 'Assist' : unit
@@ -191,14 +206,15 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
             {restOptions.map((s) => <option key={s} value={s}>{clock(s)}</option>)}
           </select>
         )}
-        {count > 1 && (
-          <>
-            <button className="icon-button" disabled={index === 0} onClick={() => onMove(-1)} aria-label="Move exercise up"><Icon name="up" size={16} /></button>
-            <button className="icon-button" disabled={index === count - 1} onClick={() => onMove(1)} aria-label="Move exercise down"><Icon name="down" size={16} /></button>
-          </>
-        )}
-        <button className="icon-button" onClick={onRemove} aria-label={`Remove ${exercise.exerciseName}`}><Icon name="trash" size={16} /></button>
+        <button className="icon-button" onClick={() => setMenu(true)} aria-label={`Options for ${exercise.exerciseName}`}><Icon name="more" size={22} stroke={3} /></button>
       </div>
+      {menu && (
+        <ActionSheet title={exercise.exerciseName} onClose={() => setMenu(false)} actions={[
+          ...(index > 0 ? [{ label: 'Move up', run: () => onMove(-1) }] : []),
+          ...(index < count - 1 ? [{ label: 'Move down', run: () => onMove(1) }] : []),
+          { label: 'Remove exercise', run: onRemove, danger: true },
+        ]} />
+      )}
       {!previous && exercise.measurement.loadConvention && exercise.measurement.loadConvention !== 'total' && (
         <p className="tiny faint" style={{ margin: '6px 0 0' }}>{loadExplanation(exercise.measurement)}</p>
       )}
@@ -211,18 +227,19 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
       {exercise.sets.map((set, si) => {
         const prior = counterpart(previous, exercise.sets, si)
         return (
-          <SetRow key={set.id} set={set} label={setLabel(exercise.sets, si)} prior={prior} hint={placeholder(set, prior)} hasLoad={hasLoad} unit={unit}
-            error={rejected?.set === set.id ? rejected.message : undefined}
-            onChange={(next) => setSet(si, next)} onComplete={() => onComplete(si)}
-            onRemove={() => onChange({ ...exercise, sets: exercise.sets.filter((_, i) => i !== si) })} />
+          <SwipeRow key={set.id} onDelete={() => onChange({ ...exercise, sets: exercise.sets.filter((_, i) => i !== si) })}>
+            <SetRow set={set} label={setLabel(exercise.sets, si)} prior={prior} hint={placeholder(set, prior)} hasLoad={hasLoad} unit={unit}
+              error={rejected?.set === set.id ? rejected.message : undefined}
+              onChange={(next) => setSet(si, next)} onComplete={() => onComplete(si)} />
+          </SwipeRow>
         )
       })}
       <div className="row" style={{ marginTop: 8, gap: 8 }}>
-        <button className="btn btn-secondary" style={{ minHeight: 40, color: 'var(--ink-2)', background: 'var(--surface)', border: 0 }} onClick={() => onChange(addSet(exercise))}>
+        <button className="btn btn-secondary" style={{ minHeight: 42, color: 'var(--ink-2)', background: 'var(--surface)', border: 0 }} onClick={() => { tap(); onChange(addSet(exercise)) }}>
           <Icon name="plus" size={16} /> Add set
         </button>
         {exercise.sets.length > 0 && (
-          <button className="btn btn-ghost small subtle" style={{ whiteSpace: 'nowrap' }} onClick={() => onChange({ ...exercise, sets: exercise.sets.slice(0, -1) })}
+          <button className="btn btn-ghost small subtle hover-only" style={{ whiteSpace: 'nowrap' }} onClick={() => onChange({ ...exercise, sets: exercise.sets.slice(0, -1) })}
             aria-label={`Remove last set of ${exercise.exerciseName}`}>Remove last</button>
         )}
       </div>
@@ -230,9 +247,17 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
   )
 }
 
-function SetRow({ set, label, prior, hint, hasLoad, unit, error, onChange, onComplete, onRemove }: {
+/** Return on the number pad moves weight -> reps -> next set's weight, like the iPhone app. */
+function focusNext(current: HTMLInputElement) {
+  const fields = [...document.querySelectorAll<HTMLInputElement>('.set-row input')]
+  const next = fields[fields.indexOf(current) + 1]
+  if (next) next.focus()
+  else current.blur()
+}
+
+function SetRow({ set, label, prior, hint, hasLoad, unit, error, onChange, onComplete }: {
   set: WorkoutSet; label: string; prior?: WorkoutSet; hint: { load?: { value: number; unit: MassUnit }; reps?: number }
-  hasLoad: boolean; unit: MassUnit; error?: string; onChange: (s: WorkoutSet) => void; onComplete: () => void; onRemove: () => void
+  hasLoad: boolean; unit: MassUnit; error?: string; onChange: (s: WorkoutSet) => void; onComplete: () => void
 }) {
   const [loadText, setLoadText] = useState(set.load ? mass(set.load, unit, false) : '')
   const [repsText, setRepsText] = useState(set.reps !== undefined ? String(set.reps) : '')
@@ -242,14 +267,14 @@ function SetRow({ set, label, prior, hint, hasLoad, unit, error, onChange, onCom
   const shownReps = set.reps !== undefined && parseInteger(repsText) === undefined ? String(set.reps) : repsText
 
   return (
-    <div className={`set-grid set-row${hasLoad ? '' : ' no-load'}${done ? ' done' : ''}`}
-      onContextMenu={(e) => { e.preventDefault(); onRemove() }}>
+    <div className={`set-grid set-row${hasLoad ? '' : ' no-load'}${done ? ' done' : ''}`}>
       <button className={`set-num num${set.type === 'warmup' ? ' warmup' : ''}${done ? ' done' : ''}`}
         onClick={() => onChange({ ...set, type: set.type === 'warmup' ? 'working' : 'warmup' })}
         aria-label={set.type === 'warmup' ? 'Warm-up set. Switch to working set' : `Set ${label}. Switch to warm-up`}>{label}</button>
       <span className="prev num" aria-label={prior ? `Previous ${setText(prior, unit)}` : 'No previous'}>{prior ? setText(prior, unit) : '-'}</span>
       {hasLoad && (
-        <input className={`field num${done ? ' done' : ''}${error && !set.load && !hint.load ? ' invalid' : ''}`} inputMode="decimal" aria-label={`Weight in ${unit}`}
+        <input className={`field num${done ? ' done' : ''}${error && !set.load && !hint.load ? ' invalid' : ''}`} inputMode="decimal" enterKeyHint="next" aria-label={`Weight in ${unit}`}
+          onKeyDown={(e) => e.key === 'Enter' && focusNext(e.currentTarget)}
           placeholder={hint.load ? mass(hint.load, unit, false) : ''} value={shownLoad}
           onChange={(e) => {
             setLoadText(e.target.value)
@@ -258,7 +283,8 @@ function SetRow({ set, label, prior, hint, hasLoad, unit, error, onChange, onCom
             else if (v !== undefined && v >= 0) onChange({ ...set, load: { value: v, unit } })
           }} />
       )}
-      <input className={`field num${done ? ' done' : ''}${error && set.reps === undefined && hint.reps === undefined ? ' invalid' : ''}`} inputMode="numeric" aria-label="Reps"
+      <input className={`field num${done ? ' done' : ''}${error && set.reps === undefined && hint.reps === undefined ? ' invalid' : ''}`} inputMode="numeric" enterKeyHint="next" aria-label="Reps"
+        onKeyDown={(e) => e.key === 'Enter' && focusNext(e.currentTarget)}
         placeholder={hint.reps !== undefined ? String(hint.reps) : ''} value={shownReps}
         onChange={(e) => {
           setRepsText(e.target.value)
@@ -276,7 +302,7 @@ function SetRow({ set, label, prior, hint, hasLoad, unit, error, onChange, onCom
 
 function RestBar({ endsAt, duration: total, now }: { endsAt: number; duration: number; now: number }) {
   const remaining = Math.max(0, Math.ceil((endsAt - now) / 1000))
-  const progress = remaining / Math.max(total, 1)
+  const progress = Math.min(1, remaining / Math.max(total, 1))
   const r = 13
   const c = 2 * Math.PI * r
   return (
@@ -290,9 +316,9 @@ function RestBar({ endsAt, duration: total, now }: { endsAt: number; duration: n
         <div className="tiny subtle">{remaining === 0 ? 'Rest over' : 'Rest'}</div>
         <div className="num" style={{ fontSize: 20, fontWeight: 600, color: remaining === 0 ? 'var(--done)' : undefined }}>{clock(remaining)}</div>
       </div>
-      <button className="pill quiet num" onClick={() => adjustRest(-15)} aria-label="Subtract 15 seconds">-15</button>
-      <button className="pill quiet num" onClick={() => adjustRest(15)} aria-label="Add 15 seconds">+15</button>
-      <button className="pill" onClick={clearRest}>{remaining === 0 ? 'Done' : 'Skip'}</button>
+      <button className="pill quiet num" onClick={() => { tap(); adjustRest(-15) }} aria-label="Subtract 15 seconds">-15</button>
+      <button className="pill quiet num" onClick={() => { tap(); adjustRest(15) }} aria-label="Add 15 seconds">+15</button>
+      <button className="pill" onClick={() => { tap(); clearRest() }}>{remaining === 0 ? 'Done' : 'Skip'}</button>
     </div>
   )
 }
@@ -340,6 +366,7 @@ function FinishSheet({ session, unit, onClose, onToast }: { session: WorkoutSess
         </div>
       )}
       <button className="btn btn-primary" style={{ marginTop: 24 }} onClick={() => {
+        tap()
         store.save('session', finished)
         if (update && proposal) store.save('template', proposal.updated)
         clearRest()

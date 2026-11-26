@@ -74,18 +74,18 @@ export function Settings({ onSignedOut, onToast }: { onSignedOut: () => void; on
       </section>
 
       <section className="section stack">
-        <button className="btn btn-secondary" onClick={() => (data.pending > 0 ? setDialog('signout') : signOut().then(onSignedOut))}>Sign out</button>
+        <button className="btn btn-secondary" onClick={() => (data.pending > 0 ? setDialog('signout') : store.clearLocal().then(signOut).then(onSignedOut))}>Sign out</button>
         <button className="btn btn-ghost btn-danger" onClick={() => setDialog('delete')}>Delete account</button>
       </section>
 
       {dialog === 'signout' && (
         <Confirm title="Sign out with unsaved changes?" message={`${data.pending} change${data.pending === 1 ? " hasn't" : "s haven't"} reached the server yet and will be lost.`}
-          confirm="Sign out anyway" onCancel={() => setDialog(undefined)} onConfirm={() => signOut().then(onSignedOut)} />
+          confirm="Sign out anyway" onCancel={() => setDialog(undefined)} onConfirm={() => store.clearLocal().then(signOut).then(onSignedOut)} />
       )}
       {dialog === 'delete' && (
         <Confirm title="Delete your account?" message="Permanently deletes every workout, template and weigh-in from the server and every device. Export a backup first if you want one."
           confirm="Delete account and all data" onCancel={() => setDialog(undefined)}
-          onConfirm={() => deleteAccount().then(onSignedOut).catch((e) => { setDialog(undefined); onToast(e.message) })} />
+          onConfirm={() => deleteAccount().then(() => store.clearLocal()).then(onSignedOut).catch((e) => { setDialog(undefined); onToast(e.message) })} />
       )}
     </>
   )

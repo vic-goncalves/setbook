@@ -14,6 +14,8 @@ const paths = {
   close: 'M6 6l12 12M18 6L6 18',
   up: 'M12 19V5M5 12l7-7 7 7',
   dumbbell: 'M3 10v4M6 7v10M18 7v10M21 10v4M6 12h12',
+  calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
+  chart: 'M4 19h16M5 15l4-4 4 3 6-7',
 } as const
 
 export function Icon({ name, size = 18, stroke = 2 }: { name: keyof typeof paths; size?: number; stroke?: number }) {
