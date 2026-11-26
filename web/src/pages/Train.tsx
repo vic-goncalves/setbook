@@ -23,7 +23,7 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <>
-      <PageHeader eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} title="Train" />
+      <PageHeader account eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} title="Train" />
       <div className="stack" style={{ marginTop: 16 }}>
         {active ? (
           <button className="card clickable" style={{ textAlign: 'left', borderColor: 'rgba(76,195,138,.35)' }} onClick={() => navigate('/workout')}>
@@ -83,9 +83,12 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
                   ))}
                   {t.exercises.length > 4 && <div className="small faint" style={{ paddingLeft: 24 }}>+{t.exercises.length - 4} more</div>}
                 </div>
-                <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
-                  <button className="pill" onClick={() => start(t)} disabled={!!active} aria-label={`Start ${t.name}`}><Icon name="play" size={12} /> Start</button>
-                </div>
+                {/* No disabled buttons: while a workout runs, the resume card is the one action. */}
+                {!active && (
+                  <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
+                    <button className="pill" onClick={() => start(t)} aria-label={`Start ${t.name}`}><Icon name="play" size={12} /> Start</button>
+                  </div>
+                )}
               </div>
             )
           })}

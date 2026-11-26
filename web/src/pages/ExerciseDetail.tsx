@@ -74,7 +74,7 @@ export function ExerciseDetail({ id }: { id: string }) {
       ) : (
         <>
           <div className="stack section">
-            {kinds.length > 1 && <Chips options={kinds} value={active} onChange={(k) => { setKind(k); setSelected(undefined) }} label={(k) => (k === 'heaviestSet' && m.type === 'weighted_bodyweight_reps' ? 'Added load' : shortTitle[k])} />}
+            {kinds.length > 1 && <Chips layout="bleed" options={kinds} value={active} onChange={(k) => { setKind(k); setSelected(undefined) }} label={(k) => (k === 'heaviestSet' && m.type === 'weighted_bodyweight_reps' ? 'Added load' : shortTitle[k])} />}
             <div className="row">
               <span className="eyebrow spacer">{metricTitle(active, m)}</span>
               {active === 'bestRepsAtLoad' && loads.length > 0 && (
@@ -91,7 +91,7 @@ export function ExerciseDetail({ id }: { id: string }) {
             ) : <div className="subtle small">No sessions in this range.</div>}
             {points.length > 0 && (
               <LineChart label={`${metricTitle(active, m)} chart`} points={points.map((p) => ({ id: p.sessionId, x: Date.parse(p.date), y: display(p.value) }))}
-                selectedId={point?.sessionId} onSelect={setSelected} format={(v) => num(v, 0)} />
+                selectedId={point?.sessionId} onSelect={setSelected} format={(v) => num(v, 1)} integer={!isMassMetric(active)} />
             )}
             <Chips options={chartRanges} value={range} onChange={(r) => { setRange(r); setSelected(undefined) }} />
             {explanation && <p className="tiny faint" style={{ margin: 0 }}>{explanation}</p>}

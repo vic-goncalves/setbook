@@ -11,7 +11,7 @@ export function SwipeRow({ onDelete, children, label = 'Delete' }: { onDelete: (
   const swiped = useRef(false)
 
   return (
-    <div className={`swipe${dragging ? ' dragging' : ''}`}>
+    <div className={`swipe${dragging ? ' dragging' : ''}${offset < 0 ? ' open' : ''}`}>
       <button className="swipe-action" tabIndex={offset ? 0 : -1} aria-hidden={offset === 0} onClick={() => { tap(); setOffset(0); onDelete() }}>{label}</button>
       <div
         className="swipe-content"

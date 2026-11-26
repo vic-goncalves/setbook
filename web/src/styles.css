@@ -30,16 +30,22 @@
 @media (max-width: 700px) {
   :root { --tabbar: calc(56px + var(--safe-bottom)); font-size: 17px; }
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--bg); color: var(--ink); }
-body { min-height: 100dvh; overscroll-behavior-y: none; }
+/* App, not document: long-press shouldn't select labels or show the blue handles. Text
+   fields stay selectable. */
+body { min-height: 100dvh; overscroll-behavior-y: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
 button, input, select, textarea { font: inherit; color: inherit; }
 /* iOS zooms into any text field under 16px; never let one be smaller. */
 input, select, textarea { font-size: max(16px, 1em); }
 button { cursor: pointer; border: 0; background: none; padding: 0; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 button:disabled { cursor: default; opacity: 0.4; }
 a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+/* Keyboard focus rings for controls only. Text fields show focus with their own border;
+   iOS treats every focused field as focus-visible, which would double the ring. */
+:focus { outline: none; }
+:where(button, a, [role='radio'], select):focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 ::selection { background: rgba(245, 245, 244, 0.25); }
 
 .num { font-family: ui-rounded, 'SF Pro Rounded', -apple-system, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
@@ -56,7 +62,7 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .shell { max-width: 760px; margin: 0 auto; padding: 0 var(--page) calc(var(--tabbar) + 48px); }
 .topbar {
   position: sticky; top: 0; z-index: 20; padding-top: var(--safe-top);
-  background: rgba(11, 11, 12, 0.82); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid var(--hairline);
 }
 .topbar-inner { max-width: 760px; margin: 0 auto; padding: 8px var(--page); min-height: 52px; display: flex; align-items: center; gap: 6px; }
@@ -69,12 +75,23 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 
 /* iOS-style tab bar on phones. */
 .tabbar { display: none; }
+.phone-only { display: none !important; }
+.status-backdrop { display: none; }
 @media (max-width: 700px) {
-  .topbar-inner .tab { display: none; }
+  /* Phones use large titles and the tab bar instead of a header bar. */
+  .topbar { display: none; }
+  .phone-only { display: revert !important; }
+  .shell { padding-top: var(--safe-top); }
+  .immersive .shell { padding-top: 0; }
+  /* With a translucent status bar, scrolled content would show under the clock. */
+  .status-backdrop {
+    display: block; position: fixed; top: 0; left: 0; right: 0; height: var(--safe-top); z-index: 25;
+    background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  }
   .tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     padding: 6px 8px var(--safe-bottom); min-height: var(--tabbar);
-    background: rgba(18, 18, 20, 0.86); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+    background: rgba(18, 18, 20, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
     border-top: 0.5px solid var(--hairline);
   }
   .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 0 2px; color: var(--ink-3); font-size: 10.5px; font-weight: 600; -webkit-user-select: none; user-select: none; }
@@ -85,11 +102,29 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .app-bar {
   position: sticky; top: 0; z-index: 20; margin: 0 calc(-1 * var(--page)); padding: calc(var(--safe-top) + 6px) var(--page) 8px;
   display: flex; align-items: center; gap: 8px; min-height: calc(52px + var(--safe-top));
-  background: rgba(11, 11, 12, 0.82); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 0.5px solid var(--hairline);
 }
 .app-bar .title-slot { flex: 1; text-align: center; font-weight: 600; }
 .immersive .shell { padding-bottom: calc(var(--safe-bottom) + 120px); }
+
+/* Compact title that fades in once the large title scrolls away (phones). */
+.compact-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 26; padding: var(--safe-top) var(--page) 0; height: calc(var(--safe-top) + 44px);
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--hairline); font-weight: 600; font-size: 17px;
+  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity 0.2s, transform 0.2s var(--ease);
+}
+.compact-bar.shown { opacity: 1; transform: none; pointer-events: auto; }
+.compact-bar .avatar { position: absolute; right: var(--page); bottom: 6px; width: 30px; height: 30px; font-size: 13px; }
+@media (min-width: 701px) { .compact-bar { display: none; } }
+.avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--raised); border: 0.5px solid #34343a; color: var(--ink); display: grid; place-items: center; font-weight: 600; font-size: 15px; flex: none; }
+
+/* iOS bar buttons: plain text, bold for the confirming action, dimmer when disabled. */
+.bar-button { min-height: 44px; padding: 0 6px; font-size: 17px; color: var(--ink); font-weight: 400; }
+.bar-button.strong { font-weight: 600; }
+.bar-button:disabled { opacity: 1; color: var(--ink-3); }
 
 /* Type */
 .page-header { padding: 24px 0 8px; }
@@ -126,7 +161,10 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .pill.quiet { background: var(--raised); color: var(--ink); }
 
 /* Chips */
-.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; margin: 0 calc(-1 * var(--page)); padding: 0 var(--page); }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+/* Page-level chip rows scroll edge to edge; inside sheets and rows they stay in their box. */
+.chips.bleed { margin: 0 calc(-1 * var(--page)); padding: 0 var(--page); }
+.chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chips::-webkit-scrollbar { display: none; }
 .chip { min-height: 34px; padding: 0 14px; border-radius: 999px; background: var(--raised); color: var(--ink-2); font-size: 14px; font-weight: 500; white-space: nowrap; flex: none; }
 .chip.on { background: var(--ink); color: var(--bg); font-weight: 600; }
@@ -182,7 +220,8 @@ input[type='datetime-local'].input { min-height: 40px; color-scheme: dark; }
 .swipe { position: relative; overflow: hidden; border-radius: var(--radius-field); touch-action: pan-y; }
 .swipe-content { position: relative; z-index: 1; transition: transform 0.25s var(--ease); will-change: transform; }
 .swipe.dragging .swipe-content { transition: none; }
-.swipe-action { position: absolute; top: 0; right: 0; bottom: 0; width: 84px; display: grid; place-items: center; background: var(--danger); color: #fff; font-weight: 600; font-size: 15px; }
+.swipe.open .swipe-action, .swipe.dragging .swipe-action { visibility: visible; }
+.swipe-action { visibility: hidden; position: absolute; top: 0; right: 0; bottom: 0; width: 84px; display: grid; place-items: center; background: var(--danger); color: #fff; font-weight: 600; font-size: 15px; }
 
 /* Overlays */
 .backdrop { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.55); display: flex; align-items: flex-end; justify-content: center; animation: fade 0.2s ease; }
@@ -201,9 +240,9 @@ input[type='datetime-local'].input { min-height: 40px; color-scheme: dark; }
 .banner { margin-top: 16px; padding: 12px 14px; border-radius: var(--radius-control); background: var(--surface); border: 1px solid var(--hairline); font-size: 14px; }
 .banner.warn { border-color: rgba(229, 164, 75, 0.45); }
 .toast {
-  position: fixed; top: calc(var(--safe-top) + 64px); left: 50%; transform: translateX(-50%); z-index: 60; padding: 10px 16px; border-radius: 999px;
+  position: fixed; bottom: calc(var(--tabbar) + 20px); left: 50%; transform: translateX(-50%); z-index: 60; padding: 10px 16px; border-radius: 999px;
   background: rgba(32, 32, 36, 0.95); border: 0.5px solid #34343a; font-size: 15px; font-weight: 500; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  animation: drop 0.28s var(--ease); white-space: nowrap; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis;
+  animation: rise 0.28s var(--ease); white-space: nowrap; max-width: calc(100% - 32px); overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Charts */
@@ -228,3 +267,11 @@ input[type='datetime-local'].input { min-height: 40px; color-scheme: dark; }
 
 .hover-only { display: none !important; }
 @media (hover: hover) and (pointer: fine) { .hover-only { display: inline-flex !important; } }
+
+/* iOS segmented control */
+.segmented { display: inline-flex; flex: none; padding: 2px; border-radius: 9px; background: var(--field); }
+.segmented button { min-height: 32px; padding: 0 14px; border-radius: 7px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.segmented button.on { background: #5a5a62; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
+/* Native iOS switch (Safari 17.4+); other browsers show a checkbox. */
+input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none; }
+.sheet .chips, .sheet .exercise-search { background: inherit; }

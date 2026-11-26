@@ -23,6 +23,7 @@ export function tap() {
       input.id = 'haptic-switch'
       input.setAttribute('aria-hidden', 'true')
       input.tabIndex = -1
+      input.style.cssText = 'width:1px;height:1px;margin:0'
       haptic = document.createElement('label')
       haptic.htmlFor = input.id
       haptic.setAttribute('aria-hidden', 'true')

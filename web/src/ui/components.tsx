@@ -1,16 +1,42 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { currentUser } from '../api'
 import { Icon } from './icons'
 
-export function PageHeader({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: ReactNode }) {
+export function PageHeader({ eyebrow, title, action, account = false }: { eyebrow?: string; title: string; action?: ReactNode; account?: boolean }) {
+  // On phones, tab roots get iOS large titles: the account avatar sits beside the title, and
+  // a compact title bar fades in once the large title scrolls under the status bar.
+  const [compact, setCompact] = useState(false)
+  const sentinel = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    const el = sentinel.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => setCompact(!entry!.isIntersecting && entry!.boundingClientRect.top < 0), { threshold: 0 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   return (
-    <header className="page-header row" style={{ alignItems: 'flex-end' }}>
-      <div className="spacer">
-        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-        <h1 className="title">{title}</h1>
+    <>
+      <header className="page-header row" style={{ alignItems: 'flex-end' }}>
+        <div className="spacer">
+          {eyebrow && <div className="eyebrow">{eyebrow}</div>}
+          <h1 className="title" ref={sentinel}>{title}</h1>
+        </div>
+        {action}
+        {account && <span className="phone-only" style={{ marginBottom: 4 }}><AccountButton /></span>}
+      </header>
+      <div className={`compact-bar${compact ? ' shown' : ''}`} aria-hidden={!compact}>
+        {title}
+        {account && <AccountButton />}
       </div>
-      {action}
-    </header>
+    </>
   )
+}
+
+/** Your initial in a circle; opens Account and Settings (the iOS App Store / Health pattern). */
+export function AccountButton() {
+  const user = currentUser()
+  const initial = (user?.displayName ?? user?.email ?? '?').trim().charAt(0).toUpperCase() || '?'
+  return <a className="avatar" href="#/settings" aria-label="Account and settings">{initial}</a>
 }
 
 export function SectionHead({ title, children }: { title: string; children?: ReactNode }) {
@@ -22,9 +48,11 @@ export function SectionHead({ title, children }: { title: string; children?: Rea
   )
 }
 
-export function Chips<T extends string>({ options, value, onChange, label }: { options: T[]; value: T; onChange: (v: T) => void; label?: (v: T) => string }) {
+export function Chips<T extends string>({ options, value, onChange, label, layout }: {
+  options: T[]; value: T; onChange: (v: T) => void; label?: (v: T) => string; layout?: 'bleed' | 'wrap'
+}) {
   return (
-    <div className="chips" role="radiogroup">
+    <div className={`chips${layout ? ` ${layout}` : ''}`} role="radiogroup">
       {options.map((o) => (
         <button key={o} role="radio" aria-checked={o === value} className={`chip${o === value ? ' on' : ''}`} onClick={() => onChange(o)}>
           {label ? label(o) : o}
@@ -67,8 +95,8 @@ export function Sheet({ title, onClose, children, actions }: { title: string; on
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-head">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <strong>{title}</strong>
+          <button className="bar-button" onClick={onClose} style={{ minWidth: 64, textAlign: 'left' }}>Cancel</button>
+          <strong style={{ fontSize: 17, textAlign: 'center', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</strong>
           <div style={{ minWidth: 64, display: 'flex', justifyContent: 'flex-end' }}>{actions}</div>
         </div>
         {children}
@@ -114,11 +142,45 @@ export function ActionSheet({ title, actions, onClose }: { title: string; action
 }
 
 export function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  // Keyed on the message only: the parent re-renders every second during a workout, and
+  // restarting the timer on each render would keep the toast up forever.
+  const done = useRef(onDone)
+  done.current = onDone
   useEffect(() => {
-    const t = setTimeout(onDone, 3500)
+    const t = setTimeout(() => done.current(), 2800)
     return () => clearTimeout(t)
-  }, [message, onDone])
+  }, [message])
   return <div className="toast" role="status">{message}</div>
+}
+
+/** iOS segmented control for a small fixed set of choices (units, etc.). */
+export function Segmented<T extends string>({ options, value, onChange, label }: { options: T[]; value: T; onChange: (v: T) => void; label?: (v: T) => string }) {
+  return (
+    <div className="segmented" role="radiogroup">
+      {options.map((o) => (
+        <button key={o} role="radio" aria-checked={o === value} className={o === value ? 'on' : undefined} onClick={() => onChange(o)}>
+          {label ? label(o) : o}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** A title field that wraps onto more lines instead of scrolling sideways and cutting the name off. */
+export function TitleField({ value, onChange, placeholder, label, autoFocus }: { value: string; onChange: (v: string) => void; placeholder: string; label: string; autoFocus?: boolean }) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = '0px'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+  return (
+    <textarea ref={ref} className="bare title" rows={1} value={value} placeholder={placeholder} aria-label={label} autoFocus={autoFocus}
+      onChange={(e) => onChange(e.target.value.replace(/\n/g, ' '))}
+      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), e.currentTarget.blur())}
+      style={{ overflow: 'hidden', display: 'block' }} />
+  )
 }
 
 export function useNow(intervalMs = 1000) {

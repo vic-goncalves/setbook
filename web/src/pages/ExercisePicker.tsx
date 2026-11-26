@@ -17,7 +17,7 @@ export function ExerciseList({ onPick, selected, onCreate }: { onPick: (e: Exerc
 
   return (
     <div>
-      <div className="stack" style={{ position: 'sticky', top: 64, background: 'var(--bg)', paddingBottom: 8, zIndex: 1 }}>
+      <div className="stack exercise-search" style={{ position: 'sticky', top: 64, background: 'var(--bg)', paddingBottom: 8, zIndex: 1 }}>
         <input className="input" placeholder="Search exercises" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus aria-label="Search exercises" />
         <div className="row" style={{ gap: 8 }}>
           <select className="select" value={muscle} onChange={(e) => setMuscle(e.target.value as MuscleGroup | '')} aria-label="Muscle">
@@ -63,7 +63,7 @@ export function ExercisePicker({ onClose, onDone }: { onClose: () => void; onDon
   }
   return (
     <Sheet title="Add exercises" onClose={onClose} actions={
-      <button className="pill" disabled={selected.length === 0} onClick={() => { onDone(selected); onClose() }}>Add {selected.length || ''}</button>
+      <button className="bar-button strong" disabled={selected.length === 0} onClick={() => { onDone(selected); onClose() }}>{selected.length ? `Add ${selected.length}` : 'Add'}</button>
     }>
       <ExerciseList selected={ids} onCreate={setCreating} onPick={(e) => setSelected(ids.has(e.id) ? selected.filter((x) => x.id !== e.id) : [...selected, e])} />
     </Sheet>
@@ -97,7 +97,7 @@ export function CustomExerciseSheet({ existing, initialName = '', locked = false
     onClose()
   }
   return (
-    <Sheet title={existing ? 'Edit exercise' : 'New exercise'} onClose={onClose} actions={<button className="pill" disabled={!name.trim()} onClick={save}>Save</button>}>
+    <Sheet title={existing ? 'Edit exercise' : 'New exercise'} onClose={onClose} actions={<button className="bar-button strong" disabled={!name.trim()} onClick={save}>Save</button>}>
       <div className="stack">
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name, e.g. Incline Press (Dumbbell)" autoFocus aria-label="Name" />
         <p className="tiny faint" style={{ margin: 0 }}>Make variants separate exercises so their progress isn't mixed.</p>

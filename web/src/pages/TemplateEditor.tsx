@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { loadLabel } from '../domain/catalog'
 import { DEFAULT_REST, setLabel, strip } from '../domain/workout'
-import type { TemplateExercise, TemplateSet, WorkoutTemplate } from '../domain/types'
+import type { Measurement, TemplateExercise, TemplateSet, WorkoutTemplate } from '../domain/types'
 import { newId, nowIso, tracksLoad } from '../domain/types'
 import { mass, parseDecimal, parseInteger } from '../format'
 import { usePrefs } from '../prefs'
 import { back, navigate } from '../router'
 import { store, useStore } from '../store'
-import { Confirm, EmptyState } from '../ui/components'
+import { ActionSheet, Confirm, EmptyState, TitleField } from '../ui/components'
+import { SwipeRow } from '../ui/swipe'
 import { Icon } from '../ui/icons'
 import { ExercisePicker } from './ExercisePicker'
 
@@ -44,58 +45,35 @@ export function TemplateEditor({ id }: { id: string }) {
   return (
     <>
       <div className="app-bar">
-        <button className="btn btn-ghost" onClick={() => (changed && draft.name ? setDiscarding(true) : back('/train'))}>Cancel</button>
+        <button className="bar-button" style={{ minWidth: 64, textAlign: 'left' }} onClick={() => (changed && draft.name ? setDiscarding(true) : back('/train'))}>Cancel</button>
         <div className="title-slot">{existing ? 'Edit template' : 'New template'}</div>
-        <button className="pill" disabled={!canSave} onClick={save}>Save</button>
+        <button className="bar-button strong" style={{ minWidth: 64, textAlign: 'right' }} disabled={!canSave} onClick={save}>Save</button>
       </div>
       <div style={{ height: 16 }} />
-      <input className="bare title" placeholder="Template name, e.g. Push" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="Template name" autoFocus={!existing} />
+      <TitleField value={draft.name} placeholder="Template name" label="Template name" autoFocus={!existing} onChange={(name) => setDraft({ ...draft, name })} />
       <textarea className="bare subtle" style={{ marginTop: 8, resize: 'none' }} rows={1} placeholder="Notes" value={draft.notes ?? ''}
         onChange={(e) => setDraft(strip({ ...draft, notes: e.target.value || undefined }))} aria-label="Template notes" />
 
-      {draft.exercises.map((exercise, index) => {
-        const info = data.exerciseById.get(exercise.exerciseId.toUpperCase())
-        const measurement = info?.measurement ?? { type: 'bodyweight_reps' as const }
-        const hasLoad = tracksLoad(measurement)
-        return (
-          <section key={exercise.id} className="section">
-            <div className="row">
-              <strong className="spacer" style={{ fontSize: 17 }}>{info?.name ?? 'Exercise'}</strong>
-              <select className="select" value={exercise.restSeconds ?? 0} aria-label="Rest timer"
-                onChange={(e) => update(index, (x) => strip({ ...x, restSeconds: Number(e.target.value) || undefined }))}>
-                <option value={0}>Rest off</option>
-                {restOptions.map((s) => <option key={s} value={s}>Rest {Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}</option>)}
-              </select>
-              <button className="icon-button" disabled={index === 0} onClick={() => move(index, -1)} aria-label="Move up"><Icon name="up" size={16} /></button>
-              <button className="icon-button" onClick={() => setDraft({ ...draft, exercises: draft.exercises.filter((_, i) => i !== index) })} aria-label="Remove exercise"><Icon name="trash" size={16} /></button>
-            </div>
-            <input className="bare small subtle" style={{ margin: '6px 0 10px' }} placeholder="Exercise notes" value={exercise.notes ?? ''}
-              onChange={(e) => update(index, (x) => strip({ ...x, notes: e.target.value || undefined }))} aria-label="Exercise notes" />
-            <div className="set-grid set-head" style={{ gridTemplateColumns: hasLoad ? '40px 1fr 1fr 110px 36px' : '40px 1fr 1fr 36px' }}>
-              <span>Set</span><span>Min reps</span><span>Max reps</span>{hasLoad && <span>{loadLabel(measurement)} ({unit})</span>}<span />
-            </div>
-            {exercise.sets.map((set, setIndex) => (
-              <TemplateSetRow key={set.id} set={set} label={setLabel(exercise.sets, setIndex)} hasLoad={hasLoad} unit={unit}
-                onChange={(next, valid) => {
-                  update(index, (x) => ({ ...x, sets: x.sets.map((s, i) => (i === setIndex ? next : s)) }))
-                  const nextInvalid = new Set(invalid)
-                  if (valid) nextInvalid.delete(set.id)
-                  else nextInvalid.add(set.id)
-                  setInvalid(nextInvalid)
-                }}
-                onRemove={() => update(index, (x) => ({ ...x, sets: x.sets.filter((_, i) => i !== setIndex) }))}
-              />
-            ))}
-            <button className="btn btn-secondary" style={{ marginTop: 8, minHeight: 40 }}
-              onClick={() => update(index, (x) => {
-                const last = x.sets.at(-1)
-                return { ...x, sets: [...x.sets, strip({ id: newId(), type: last?.type ?? 'working', targetReps: last?.targetReps, targetLoad: last?.targetLoad })] }
-              })}>
-              <Icon name="plus" size={16} /> Add set
-            </button>
-          </section>
-        )
-      })}
+      {draft.exercises.map((exercise, index) => (
+        <TemplateExerciseBlock
+          key={exercise.id}
+          exercise={exercise}
+          index={index}
+          count={draft.exercises.length}
+          name={data.exerciseById.get(exercise.exerciseId.toUpperCase())?.name ?? 'Exercise'}
+          measurement={data.exerciseById.get(exercise.exerciseId.toUpperCase())?.measurement ?? { type: 'bodyweight_reps' }}
+          unit={unit}
+          onChange={(next) => update(index, () => next)}
+          onMove={(by) => move(index, by)}
+          onRemove={() => setDraft({ ...draft, exercises: draft.exercises.filter((_, i) => i !== index) })}
+          onValidity={(setId, valid) => {
+            const next = new Set(invalid)
+            if (valid) next.delete(setId)
+            else next.add(setId)
+            setInvalid(next)
+          }}
+        />
+      ))}
 
       <button className="btn btn-secondary" style={{ marginTop: 28 }} onClick={() => setPicking(true)}><Icon name="plus" size={16} /> Add exercises</button>
       {picking && (
@@ -108,8 +86,63 @@ export function TemplateEditor({ id }: { id: string }) {
   )
 }
 
-function TemplateSetRow({ set, label, hasLoad, unit, onChange, onRemove }: {
-  set: TemplateSet; label: string; hasLoad: boolean; unit: 'kg' | 'lb'; onChange: (s: TemplateSet, valid: boolean) => void; onRemove: () => void
+function TemplateExerciseBlock({ exercise, index, count, name, measurement, unit, onChange, onMove, onRemove, onValidity }: {
+  exercise: TemplateExercise; index: number; count: number; name: string; measurement: Measurement; unit: 'kg' | 'lb'
+  onChange: (e: TemplateExercise) => void; onMove: (by: number) => void; onRemove: () => void; onValidity: (setId: string, valid: boolean) => void
+}) {
+  const [menu, setMenu] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
+  const hasLoad = tracksLoad(measurement)
+  const columns = hasLoad ? '40px 1fr 1fr 96px' : '40px 1fr 1fr'
+  return (
+    <section className="section">
+      <div className="row" style={{ alignItems: 'flex-start' }}>
+        <strong className="spacer" style={{ fontSize: 17, paddingTop: 6 }}>{name}</strong>
+        <select className="select" value={exercise.restSeconds ?? 0} aria-label={`Rest timer for ${name}`}
+          onChange={(e) => onChange(strip({ ...exercise, restSeconds: Number(e.target.value) || undefined }))}>
+          <option value={0}>Rest off</option>
+          {restOptions.map((s) => <option key={s} value={s}>{Math.floor(s / 60)}:{String(s % 60).padStart(2, '0')}</option>)}
+        </select>
+        <button className="icon-button" onClick={() => setMenu(true)} aria-label={`Options for ${name}`}><Icon name="more" size={22} stroke={3} /></button>
+      </div>
+      {(exercise.notes !== undefined || addingNote) && (
+        <input className="bare small subtle" style={{ marginTop: 6 }} placeholder="Note" value={exercise.notes ?? ''} autoFocus={addingNote}
+          onBlur={() => setAddingNote(false)} onChange={(e) => onChange(strip({ ...exercise, notes: e.target.value || undefined }))} aria-label={`Note for ${name}`} />
+      )}
+      <div className="set-grid set-head" style={{ gridTemplateColumns: columns, marginTop: 10, paddingLeft: 0, paddingRight: 0 }}>
+        <span style={{ textAlign: 'center' }}>Set</span><span style={{ textAlign: 'center' }}>Min reps</span><span style={{ textAlign: 'center' }}>Max reps</span>
+        {hasLoad && <span style={{ textAlign: 'center' }}>{loadLabel(measurement)} ({unit})</span>}
+      </div>
+      {exercise.sets.map((set, setIndex) => (
+        <SwipeRow key={set.id} onDelete={() => { onValidity(set.id, true); onChange({ ...exercise, sets: exercise.sets.filter((_, i) => i !== setIndex) }) }}>
+          <TemplateSetRow set={set} label={setLabel(exercise.sets, setIndex)} hasLoad={hasLoad} unit={unit} columns={columns}
+            onChange={(next, valid) => {
+              onChange({ ...exercise, sets: exercise.sets.map((s, i) => (i === setIndex ? next : s)) })
+              onValidity(set.id, valid)
+            }} />
+        </SwipeRow>
+      ))}
+      <button className="btn btn-secondary" style={{ marginTop: 8, minHeight: 42, color: 'var(--ink-2)', background: 'var(--surface)', border: 0 }}
+        onClick={() => {
+          const last = exercise.sets.at(-1)
+          onChange({ ...exercise, sets: [...exercise.sets, strip({ id: newId(), type: last?.type ?? 'working', targetReps: last?.targetReps, targetLoad: last?.targetLoad })] })
+        }}>
+        <Icon name="plus" size={16} /> Add set
+      </button>
+      {menu && (
+        <ActionSheet title={name} onClose={() => setMenu(false)} actions={[
+          ...(exercise.notes === undefined ? [{ label: 'Add note', run: () => setAddingNote(true) }] : []),
+          ...(index > 0 ? [{ label: 'Move up', run: () => onMove(-1) }] : []),
+          ...(index < count - 1 ? [{ label: 'Move down', run: () => onMove(1) }] : []),
+          { label: 'Remove exercise', run: onRemove, danger: true },
+        ]} />
+      )}
+    </section>
+  )
+}
+
+function TemplateSetRow({ set, label, hasLoad, unit, columns, onChange }: {
+  set: TemplateSet; label: string; hasLoad: boolean; unit: 'kg' | 'lb'; columns: string; onChange: (s: TemplateSet, valid: boolean) => void
 }) {
   const [minText, setMin] = useState(set.targetReps ? String(set.targetReps.min) : '')
   const [maxText, setMax] = useState(set.targetReps && set.targetReps.max !== set.targetReps.min ? String(set.targetReps.max) : '')
@@ -132,7 +165,7 @@ function TemplateSetRow({ set, label, hasLoad, unit, onChange, onRemove }: {
   const invalidReps = !!(minText || maxText) && !(parseInteger(minText) && (!maxText || (parseInteger(maxText) ?? 0) >= (parseInteger(minText) ?? 0)))
 
   return (
-    <div className="set-grid" style={{ gridTemplateColumns: hasLoad ? '40px 1fr 1fr 110px 36px' : '40px 1fr 1fr 36px', padding: '3px 0' }}>
+    <div className="set-grid" style={{ gridTemplateColumns: columns, padding: '3px 0', background: 'var(--bg)' }}>
       <button className={`set-num field${set.type === 'warmup' ? ' warmup' : ''}`} style={{ color: set.type === 'warmup' ? 'var(--warmup)' : undefined }}
         onClick={() => commit(minText, maxText, loadText, set.type === 'warmup' ? 'working' : 'warmup')}
         aria-label={set.type === 'warmup' ? 'Warm-up set, switch to working' : `Working set ${label}, switch to warm-up`}>{label}</button>
@@ -144,7 +177,6 @@ function TemplateSetRow({ set, label, hasLoad, unit, onChange, onRemove }: {
         <input className="field num" inputMode="decimal" placeholder="-" value={loadText} aria-label={`Target load in ${unit}, optional`}
           onChange={(e) => { setLoad(e.target.value); commit(minText, maxText, e.target.value) }} />
       )}
-      <button className="icon-button" onClick={onRemove} aria-label="Remove set"><Icon name="close" size={14} /></button>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { calendarDay, mass, num, parseDecimal, signed } from '../format'
 import { usePrefs } from '../prefs'
 import { back } from '../router'
 import { store, useStore } from '../store'
-import { Chips, Confirm, EmptyState, SectionHead, Sheet } from '../ui/components'
+import { Chips, Confirm, EmptyState, SectionHead, Segmented, Sheet } from '../ui/components'
 import { LineChart } from '../ui/chart'
 import { Icon } from '../ui/icons'
 import { SwipeRow } from '../ui/swipe'
@@ -23,7 +23,11 @@ export function BodyWeight() {
 
   return (
     <>
-      <button className="btn btn-ghost" style={{ marginTop: 14 }} onClick={() => back('/progress')}><Icon name="back" size={16} /> Progress</button>
+      <div className="row" style={{ marginTop: 10, marginLeft: -8 }}>
+        <button className="btn btn-ghost" onClick={() => back('/progress')}><Icon name="back" size={18} /> Progress</button>
+        <span className="spacer" />
+        {entries.length > 0 && <button className="icon-button" onClick={() => setEditing('new')} aria-label="Log weight"><Icon name="plus" size={22} /></button>}
+      </div>
       <header className="page-header" style={{ paddingTop: 8 }}>
         <div className="eyebrow">Body weight</div>
         {summary.latest ? (
@@ -80,11 +84,7 @@ export function BodyWeight() {
           </section>
         </div>
       )}
-      {entries.length > 0 && (
-        <div style={{ position: 'sticky', bottom: 'calc(var(--tabbar) + 12px)', marginTop: 24, zIndex: 5 }}>
-          <button className="btn btn-primary" onClick={() => setEditing('new')}><Icon name="plus" size={16} /> Log weight</button>
-        </div>
-      )}
+
       {editing && <EntrySheet existing={editing === 'new' ? undefined : editing} defaultUnit={unit} onClose={() => setEditing(undefined)} />}
     </>
   )
@@ -117,11 +117,11 @@ function EntrySheet({ existing, defaultUnit, onClose }: { existing?: BodyMeasure
       onConfirm={() => { store.remove('measurement', existing.id); onClose() }} />
   }
   return (
-    <Sheet title={existing ? 'Edit weight' : 'Log weight'} onClose={onClose} actions={<button className="pill" disabled={!valid || future} onClick={save}>Save</button>}>
+    <Sheet title={existing ? 'Edit weight' : 'Log weight'} onClose={onClose} actions={<button className="bar-button strong" disabled={!valid || future} onClick={save}>Save</button>}>
       <form className="stack" onSubmit={(e) => { e.preventDefault(); save() }}>
         <div className="row">
-          <input className="bare num metric-huge" style={{ fontSize: 44 }} inputMode="decimal" placeholder="0.0" value={text} onChange={(e) => setText(e.target.value)} autoFocus aria-label="Weight" />
-          <Chips options={['lb', 'kg'] as MassUnit[]} value={unit} onChange={setUnit} />
+          <input className="bare num metric-huge" style={{ fontSize: 44, flex: 1, minWidth: 0 }} inputMode="decimal" placeholder="0.0" value={text} onChange={(e) => setText(e.target.value)} autoFocus aria-label="Weight" />
+          <Segmented options={['lb', 'kg'] as MassUnit[]} value={unit} onChange={setUnit} />
         </div>
         {text && !valid && <span className="small" style={{ color: 'var(--danger)' }}>Enter a weight above zero.</span>}
         <label className="toggle small"><span className="subtle">When</span>

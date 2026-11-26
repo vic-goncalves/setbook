@@ -12,7 +12,7 @@ import { clock, duration, mass, parseDecimal, parseInteger, relativeDay, setText
 import { adjustRest, clearRest, startRest, usePrefs } from '../prefs'
 import { back, navigate } from '../router'
 import { store, useStore } from '../store'
-import { ActionSheet, Confirm, EmptyState, Sheet, Stat, useNow } from '../ui/components'
+import { ActionSheet, Confirm, EmptyState, Sheet, Stat, TitleField, useNow } from '../ui/components'
 import { Icon } from '../ui/icons'
 import { ExercisePicker } from './ExercisePicker'
 
@@ -99,12 +99,12 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
   return (
     <>
       <div className="app-bar">
-        {editing ? <button className="btn btn-ghost" onClick={() => back('/history')}>Cancel</button> : <a className="btn btn-ghost" href="#/train" aria-label="Minimize workout"><Icon name="down" size={22} /></a>}
+        {editing ? <button className="bar-button" style={{ minWidth: 64, textAlign: 'left' }} onClick={() => back('/history')}>Cancel</button> : <a className="btn btn-ghost" style={{ minWidth: 64, justifyContent: 'flex-start', paddingLeft: 0 }} href="#/train" aria-label="Minimize workout"><Icon name="down" size={22} /></a>}
         <div className="title-slot num">
           {editing ? 'Edit workout' : stopwatch(now - Date.parse(session.startedAt))}
         </div>
         {editing ? (
-          <button className="pill" onClick={() => {
+          <button className="bar-button strong" style={{ minWidth: 64, textAlign: 'right' }} onClick={() => {
             const finished = finishSession(session, session.finishedAt ?? nowIso())
             if (!finished) return onToast('A finished workout needs at least one completed set.')
             store.save('session', { ...finished, finishedAt: session.finishedAt ?? finished.finishedAt })
@@ -115,8 +115,9 @@ function Logger({ session, editing, write, onToast }: { session: WorkoutSession;
         )}
       </div>
 
-      <input className="bare title" style={{ marginTop: 16 }} value={session.name} aria-label="Workout name"
-        onChange={(e) => write({ ...session, name: e.target.value || 'Workout' })} />
+      <div style={{ marginTop: 16 }}>
+        <TitleField value={session.name} placeholder="Workout" label="Workout name" onChange={(name) => write({ ...session, name: name || 'Workout' })} />
+      </div>
       {editing ? (
         <div className="card" style={{ marginTop: 12, padding: 12 }}>
           <label className="toggle small"><span className="subtle">Started</span>
@@ -184,6 +185,7 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
   onChange: (e: WorkoutExercise) => void; onComplete: (setIndex: number) => void; onMove: (by: number) => void; onRemove: () => void
 }) {
   const [menu, setMenu] = useState(false)
+  const [addingNote, setAddingNote] = useState(false)
   const hasLoad = tracksLoad(exercise.measurement)
   const label = loadLabel(exercise.measurement)
   const loadColumn = exercise.measurement.loadConvention === 'per_hand' ? `${unit}/hand` : exercise.measurement.loadConvention === 'added' ? `+${unit}` : exercise.measurement.loadConvention === 'assistance' ? 'Assist' : unit
@@ -210,6 +212,7 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
       </div>
       {menu && (
         <ActionSheet title={exercise.exerciseName} onClose={() => setMenu(false)} actions={[
+          ...(exercise.notes === undefined ? [{ label: 'Add note', run: () => setAddingNote(true) }] : []),
           ...(index > 0 ? [{ label: 'Move up', run: () => onMove(-1) }] : []),
           ...(index < count - 1 ? [{ label: 'Move down', run: () => onMove(1) }] : []),
           { label: 'Remove exercise', run: onRemove, danger: true },
@@ -218,8 +221,13 @@ function ExerciseBlock({ exercise, index, count, unit, editing, previous, reject
       {!previous && exercise.measurement.loadConvention && exercise.measurement.loadConvention !== 'total' && (
         <p className="tiny faint" style={{ margin: '6px 0 0' }}>{loadExplanation(exercise.measurement)}</p>
       )}
-      <input className="bare small subtle" style={{ margin: '8px 0 10px' }} placeholder="Exercise note" value={exercise.notes ?? ''}
-        onChange={(e) => onChange(strip({ ...exercise, notes: e.target.value || undefined }))} aria-label={`Note for ${exercise.exerciseName}`} />
+      {/* Notes only take space when used; "Add note" lives in the exercise menu. */}
+      {(exercise.notes !== undefined || addingNote) && (
+        <input className="bare small subtle" style={{ margin: '8px 0 2px' }} placeholder="Note" value={exercise.notes ?? ''} autoFocus={addingNote}
+          onBlur={() => setAddingNote(false)}
+          onChange={(e) => onChange(strip({ ...exercise, notes: e.target.value || undefined }))} aria-label={`Note for ${exercise.exerciseName}`} />
+      )}
+      <div style={{ height: 10 }} />
 
       <div className={`set-grid set-head${hasLoad ? '' : ' no-load'}`}>
         <span style={{ textAlign: 'center' }}>Set</span><span>Previous</span>{hasLoad && <span style={{ textAlign: 'center' }}>{loadColumn}</span>}<span style={{ textAlign: 'center' }}>Reps</span><span />
@@ -359,7 +367,7 @@ function FinishSheet({ session, unit, onClose, onToast }: { session: WorkoutSess
         <div className="card section">
           <label className="toggle">
             <span><strong>Update “{template.name}”</strong><div className="tiny subtle">You changed this workout's structure.</div></span>
-            <input type="checkbox" checked={update} onChange={(e) => setUpdate(e.target.checked)} style={{ width: 22, height: 22, accentColor: 'var(--done)' }} />
+            <input type="checkbox" {...{ switch: '' }} checked={update} onChange={(e) => { tap(); setUpdate(e.target.checked) }} aria-label={`Update ${template.name}`} />
           </label>
           <ul className="small subtle" style={{ margin: '10px 0 0', paddingLeft: 18 }}>{proposal.changes.map((c) => <li key={c}>{c}</li>)}</ul>
           <p className="tiny faint" style={{ marginBottom: 0 }}>Off keeps the template as it was. Logged weights and reps never change its targets on their own.</p>

@@ -101,6 +101,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
 
   return (
     <>
+      <div className="status-backdrop" aria-hidden="true" />
       {!immersive && (
         <nav className="topbar" aria-label="Primary">
           <div className="topbar-inner">

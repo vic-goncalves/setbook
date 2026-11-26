@@ -13,7 +13,7 @@ export function History() {
   }
   return (
     <>
-      <PageHeader eyebrow={completed.length ? `${completed.length} workouts logged` : undefined} title="History" />
+      <PageHeader account eyebrow={completed.length ? `${completed.length} workouts logged` : undefined} title="History" />
       {completed.length === 0 && (
         <div className="card section"><EmptyState title="No workouts yet" message="Finished workouts land here, grouped by month, with every set you logged." /></div>
       )}
@@ -34,7 +34,7 @@ export function History() {
                   </div>
                   <div className="spacer">
                     <div style={{ fontWeight: 600 }}>{s.name}</div>
-                    <div className="small subtle num">{[s.finishedAt ? duration(Date.parse(s.finishedAt) - date.getTime()) : undefined, `${workingSetCount(s)} sets`].filter(Boolean).join(', ')}</div>
+                    <div className="small subtle num">{[s.finishedAt ? duration(Date.parse(s.finishedAt) - date.getTime()) : undefined, `${workingSetCount(s)} set${workingSetCount(s) === 1 ? '' : 's'}`].filter(Boolean).join(', ')}</div>
                   </div>
                   <Chevron />
                 </a>

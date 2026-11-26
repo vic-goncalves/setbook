@@ -10,7 +10,7 @@ export interface ChartPoint {
  * Minimal line chart in SVG: optional area fill, faint raw dots, a highlighted point that
  * follows the pointer. Missing sessions are simply absent; nothing is drawn as zero.
  */
-export function LineChart({ points, dots, selectedId, onSelect, area = true, height = 220, label, format }: {
+export function LineChart({ points, dots, selectedId, onSelect, area = true, height = 220, label, format, integer = false }: {
   points: ChartPoint[]
   dots?: ChartPoint[]
   selectedId?: string
@@ -19,6 +19,8 @@ export function LineChart({ points, dots, selectedId, onSelect, area = true, hei
   height?: number
   label: string
   format: (y: number) => string
+  /** Whole-number axis steps, e.g. for reps. */
+  integer?: boolean
 }) {
   const ref = useRef<SVGSVGElement>(null)
   const [width, setWidth] = useState(640)
@@ -43,7 +45,7 @@ export function LineChart({ points, dots, selectedId, onSelect, area = true, hei
   const sy = (p: ChartPoint) => scale.y(p.y)
   const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${sx(p)},${sy(p)}`).join(' ')
   const areaPath = points.length > 1 ? `${line} L${sx(points.at(-1)!)},${height - pad.bottom} L${sx(points[0]!)},${height - pad.bottom} Z` : ''
-  const ticks = [0, 1, 2, 3].map((i) => scale.minY + ((scale.maxY - scale.minY) * (i + 0.5)) / 4)
+  const ticks = niceTicks(scale.minY, scale.maxY, 4, integer)
   const dateTicks = points.length > 1 ? [0, 0.33, 0.66, 1].map((f) => scale.minX + (scale.maxX - scale.minX) * f) : []
   const selected = points.find((p) => p.id === selectedId) ?? points.at(-1)
 
@@ -91,6 +93,16 @@ export function LineChart({ points, dots, selectedId, onSelect, area = true, hei
       )}
     </svg>
   )
+}
+
+/** Round-number axis steps (1, 2, 5 x 10^n) so labels never repeat after rounding. */
+function niceTicks(min: number, max: number, count: number, integer: boolean): number[] {
+  const raw = Math.max((max - min) / count, integer ? 1 : 0)
+  const magnitude = 10 ** Math.floor(Math.log10(raw))
+  const step = [1, 2, 5, 10].map((m) => m * magnitude).find((s) => s >= raw) ?? raw
+  const ticks: number[] = []
+  for (let t = Math.ceil(min / step) * step; t <= max + 1e-9; t += step) ticks.push(Number(t.toFixed(6)))
+  return ticks
 }
 
 export function Sparkline({ values, width = 64, height = 24 }: { values: number[]; width?: number; height?: number }) {

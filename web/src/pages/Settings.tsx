@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { currentUser, deleteAccount, download, signOut } from '../api'
 import { setPrefs, usePrefs } from '../prefs'
 import { store, useStore } from '../store'
-import { Chips, Confirm, PageHeader, SectionHead } from '../ui/components'
+import { back } from '../router'
+import { Chips, Confirm, PageHeader, SectionHead, Segmented } from '../ui/components'
+import { Icon } from '../ui/icons'
 
 const rests = [30, 45, 60, 90, 120, 150, 180, 240, 300]
 
@@ -21,6 +23,7 @@ export function Settings({ onSignedOut, onToast }: { onSignedOut: () => void; on
 
   return (
     <>
+      <button className="btn btn-ghost phone-only" style={{ marginTop: 10, marginLeft: -8 }} onClick={() => back('/train')}><Icon name="back" size={18} /> Back</button>
       <PageHeader title="Settings" />
       <section className="section card stack">
         <div>
@@ -55,12 +58,12 @@ export function Settings({ onSignedOut, onToast }: { onSignedOut: () => void; on
 
       <section className="section">
         <SectionHead title="Units" />
-        <Chips options={['lb', 'kg']} value={prefs.unit} onChange={(unit) => setPrefs({ unit })} label={(u) => (u === 'lb' ? 'Pounds (lb)' : 'Kilograms (kg)')} />
+        <Segmented options={['lb', 'kg']} value={prefs.unit} onChange={(unit) => setPrefs({ unit })} label={(u) => (u === 'lb' ? 'Pounds' : 'Kilograms')} />
         <p className="tiny faint">Changes how weights are shown and the default for new entries. Past entries keep the unit they were logged in.</p>
       </section>
       <section className="section">
         <SectionHead title="Default rest" />
-        <Chips options={rests.map(String)} value={String(prefs.defaultRest)} onChange={(v) => setPrefs({ defaultRest: Number(v) })} label={(v) => `${Math.floor(Number(v) / 60)}:${String(Number(v) % 60).padStart(2, '0')}`} />
+        <Chips layout="wrap" options={rests.map(String)} value={String(prefs.defaultRest)} onChange={(v) => setPrefs({ defaultRest: Number(v) })} label={(v) => `${Math.floor(Number(v) / 60)}:${String(Number(v) % 60).padStart(2, '0')}`} />
       </section>
 
       <section className="section">
