@@ -20,9 +20,11 @@ Web app (React, GitHub Pages) ──┘
 
 Decisions and metric definitions: `docs/decisions.md`.
 
-## One-time setup still needed: Google sign-in
+## Google sign-in
 
-Google OAuth clients can only be created in the Google Cloud console, so this step is manual (about 5 minutes). Until it's done, "Continue with Google" shows "Google sign-in isn't set up on the server yet".
+Configured: one **Web application** OAuth client serves both the web app and the iPhone app. Its ID is in `server/wrangler.jsonc`; the secret is a Worker secret. While the Google app is in testing mode, only test users added under Google Auth Platform → Audience can sign in.
+
+To set it up on a fork:
 
 1. https://console.cloud.google.com/ → create a project (any name).
 2. APIs & Services → OAuth consent screen → External → fill in the app name and your email. Add yourself and friends as test users (or publish the app).
@@ -102,7 +104,6 @@ Workers free: 100k requests/day, 10 ms CPU per request. D1 free: 5M rows read an
 
 ## Not done yet
 
-- Google sign-in needs the console step above.
 - UI tests in `App/UITests` compile but haven't run on this Mac: Xcode's test runner can't attach to the simulator until developer mode is enabled (`sudo DevToolsSecurity -enable`).
 - No app icon artwork.
 - Reps in reserve and training goals exist in the data model and exports but have no entry UI.
