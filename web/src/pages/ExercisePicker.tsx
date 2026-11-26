@@ -17,7 +17,7 @@ export function ExerciseList({ onPick, selected, onCreate }: { onPick: (e: Exerc
 
   return (
     <div>
-      <div className="stack exercise-search" style={{ position: 'sticky', top: 64, background: 'var(--bg)', paddingBottom: 8, zIndex: 1 }}>
+      <div className="stack exercise-search" style={{ position: 'sticky', top: 64, paddingBottom: 8, zIndex: 1 }}>
         <input className="input" placeholder="Search exercises" value={query} onChange={(e) => setQuery(e.target.value)} autoFocus aria-label="Search exercises" />
         <div className="row" style={{ gap: 8 }}>
           <select className="select" value={muscle} onChange={(e) => setMuscle(e.target.value as MuscleGroup | '')} aria-label="Muscle">

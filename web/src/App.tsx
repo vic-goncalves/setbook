@@ -82,6 +82,12 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
     document.documentElement.classList.toggle('immersive', immersive)
   }, [immersive])
 
+  // Development only: ?scroll=<px> scrolls once data is shown, for screenshots of scrolled states.
+  useEffect(() => {
+    const y = DEV_AUTH ? Number(new URLSearchParams(location.search).get('scroll')) : 0
+    if (y && data.status === 'ready') setTimeout(() => window.scrollTo(0, y), 400)
+  }, [data.status])
+
   let page
   if (data.status === 'loading') page = <div className="spinner" />
   else if (data.status === 'error') page = <div className="banner warn">Couldn't load your data: {data.error}</div>
@@ -101,7 +107,6 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
 
   return (
     <>
-      <div className="status-backdrop" aria-hidden="true" />
       {!immersive && (
         <nav className="topbar" aria-label="Primary">
           <div className="topbar-inner">

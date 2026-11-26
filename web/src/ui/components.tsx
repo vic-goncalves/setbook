@@ -3,32 +3,16 @@ import { currentUser } from '../api'
 import { Icon } from './icons'
 
 export function PageHeader({ eyebrow, title, action, account = false }: { eyebrow?: string; title: string; action?: ReactNode; account?: boolean }) {
-  // On phones, tab roots get iOS large titles: the account avatar sits beside the title, and
-  // a compact title bar fades in once the large title scrolls under the status bar.
-  const [compact, setCompact] = useState(false)
-  const sentinel = useRef<HTMLHeadingElement>(null)
-  useEffect(() => {
-    const el = sentinel.current
-    if (!el) return
-    const observer = new IntersectionObserver(([entry]) => setCompact(!entry!.isIntersecting && entry!.boundingClientRect.top < 0), { threshold: 0 })
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+  // On phones, tab roots get large titles with the account avatar beside them.
   return (
-    <>
-      <header className="page-header row" style={{ alignItems: 'flex-end' }}>
-        <div className="spacer">
-          {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-          <h1 className="title" ref={sentinel}>{title}</h1>
-        </div>
-        {action}
-        {account && <span className="phone-only" style={{ marginBottom: 4 }}><AccountButton /></span>}
-      </header>
-      <div className={`compact-bar${compact ? ' shown' : ''}`} aria-hidden={!compact}>
-        {title}
-        {account && <AccountButton />}
+    <header className="page-header row" style={{ alignItems: 'flex-end' }}>
+      <div className="spacer">
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
+        <h1 className="title">{title}</h1>
       </div>
-    </>
+      {action}
+      {account && <span className="phone-only" style={{ marginBottom: 4 }}><AccountButton /></span>}
+    </header>
   )
 }
 

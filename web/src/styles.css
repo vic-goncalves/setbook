@@ -75,19 +75,14 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 
 /* iOS-style tab bar on phones. */
 .tabbar { display: none; }
-.phone-only { display: none !important; }
-.status-backdrop { display: none; }
+/* Hidden on wide screens only; on phones the element keeps its own display (e.g. inline-flex
+   on buttons, which centers icon and label). */
+@media (min-width: 701px) { .phone-only { display: none !important; } }
 @media (max-width: 700px) {
   /* Phones use large titles and the tab bar instead of a header bar. */
   .topbar { display: none; }
-  .phone-only { display: revert !important; }
   .shell { padding-top: var(--safe-top); }
   .immersive .shell { padding-top: 0; }
-  /* With a translucent status bar, scrolled content would show under the clock. */
-  .status-backdrop {
-    display: block; position: fixed; top: 0; left: 0; right: 0; height: var(--safe-top); z-index: 25;
-    background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
-  }
   .tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     padding: 6px 8px var(--safe-bottom); min-height: var(--tabbar);
@@ -108,17 +103,6 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 .app-bar .title-slot { flex: 1; text-align: center; font-weight: 600; }
 .immersive .shell { padding-bottom: calc(var(--safe-bottom) + 120px); }
 
-/* Compact title that fades in once the large title scrolls away (phones). */
-.compact-bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 26; padding: var(--safe-top) var(--page) 0; height: calc(var(--safe-top) + 44px);
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(11, 11, 12, 0.94); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 0.5px solid var(--hairline); font-weight: 600; font-size: 17px;
-  opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity 0.2s, transform 0.2s var(--ease);
-}
-.compact-bar.shown { opacity: 1; transform: none; pointer-events: auto; }
-.compact-bar .avatar { position: absolute; right: var(--page); bottom: 6px; width: 30px; height: 30px; font-size: 13px; }
-@media (min-width: 701px) { .compact-bar { display: none; } }
 .avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--raised); border: 0.5px solid #34343a; color: var(--ink); display: grid; place-items: center; font-weight: 600; font-size: 15px; flex: none; }
 
 /* iOS bar buttons: plain text, bold for the confirming action, dimmer when disabled. */
@@ -200,6 +184,7 @@ input[type='datetime-local'].input { min-height: 40px; color-scheme: dark; }
 .set-grid.no-load { grid-template-columns: 30px minmax(0, 1fr) 60px 44px; }
 .set-head { font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--ink-3); padding: 0 8px 4px; }
 .set-row { padding: 3px 8px; border-radius: var(--radius-field); background: var(--bg); }
+.swipe + .swipe { margin-top: 4px; }
 .set-row.done { background: #12221a; }
 .set-num { text-align: center; font-weight: 600; color: var(--ink-2); min-height: 44px; }
 .set-num.warmup { color: var(--warmup); }
@@ -274,4 +259,7 @@ input[type='datetime-local'].input { min-height: 40px; color-scheme: dark; }
 .segmented button.on { background: #5a5a62; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
 /* Native iOS switch (Safari 17.4+); other browsers show a checkbox. */
 input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none; }
-.sheet .chips, .sheet .exercise-search { background: inherit; }
+.exercise-search { background: var(--bg); }
+/* In a sheet, the sticky search strip spans the sheet's full width in the sheet's own color,
+   so it never reads as a box. */
+.sheet .exercise-search { background: #121214; margin: 0 calc(-1 * var(--page)); padding: 0 var(--page) 8px; }
