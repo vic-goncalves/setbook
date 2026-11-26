@@ -82,6 +82,10 @@ npm run dev                               # http://localhost:5173, shows a "Dev 
 
 Debug-only demo data without any server: launch with `-demo`, `-demo -demoWorkout`, or `-demo -demoScreen <history|historyDetail|progress|bench|assisted|bodyWeight|templateEditor|library|settings>`.
 
+## App icon
+
+`swift scripts/render-icon.swift` regenerates the iPhone icon (light, dark and tinted) and the web home-screen icon.
+
 ## Tests
 
 ```sh
@@ -105,6 +109,5 @@ Workers free: 100k requests/day, 10 ms CPU per request. D1 free: 5M rows read an
 ## Not done yet
 
 - UI tests in `App/UITests` compile but haven't run on this Mac: Xcode's test runner can't attach to the simulator until developer mode is enabled (`sudo DevToolsSecurity -enable`).
-- No app icon artwork.
 - Reps in reserve and training goals exist in the data model and exports but have no entry UI.
 - Workout data is edited by one device at a time; simultaneous edits to the same workout become an explicit conflict to resolve in Settings.
