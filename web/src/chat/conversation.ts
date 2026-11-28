@@ -139,6 +139,12 @@ export async function send(text: string) {
   await run()
 }
 
+/** Runs the last turn again after an error (the last message is still the user's). */
+export async function retry() {
+  if (state.busy || state.messages.at(-1)?.role !== 'user') return
+  await run()
+}
+
 async function run() {
   controller = new AbortController()
   set({ busy: true, error: undefined, live: '', activity: 'Thinking' })

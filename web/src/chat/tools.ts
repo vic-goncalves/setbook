@@ -415,9 +415,9 @@ const saveTemplate: Handler = (input, data): Proposal => {
   const setCount = exercises.reduce((n, e) => n + e.sets.length, 0)
   return {
     kind: 'proposal',
-    title: existing ? `Update "${existing.name}"` : `Create "${name}"`,
+    title: existing ? `Update “${existing.name}”` : `Create “${name}”`,
     lines: [
-      ...(existing && existing.name !== name ? [`Renamed to "${name}"`] : []),
+      ...(existing && existing.name !== name ? [`Renamed to “${name}”`] : []),
       ...exercises.map((e) => {
         const ex = data.exerciseById.get(e.exerciseId.toUpperCase())!
         const working = e.sets.filter((s) => s.type === 'working')
@@ -441,7 +441,7 @@ const deleteTemplate: Handler = (input, data): Proposal => {
   const template = templateOf(data, input.template_id)
   return {
     kind: 'proposal',
-    title: `Delete "${template.name}"`,
+    title: `Delete “${template.name}”`,
     lines: [`${template.exercises.length} exercises. Past workouts started from it are kept.`],
     confirm: 'Delete',
     danger: true,
@@ -480,7 +480,7 @@ const createExercise: Handler = (input, data): Proposal => {
   }
   return {
     kind: 'proposal',
-    title: `Add exercise "${name}"`,
+    title: `Add exercise “${name}”`,
     lines: [`${exercise.primaryMuscle.replace('_', ' ')}, ${exercise.equipment.replace('_', ' ')}`, describeMeasurement(measurement)],
     confirm: 'Add',
     apply: () => {

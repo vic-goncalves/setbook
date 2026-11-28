@@ -1,19 +1,43 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { decide, isContextBlock, newChat, send, stop, useChat, type Block, type Message } from '../chat/conversation'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { decide, isContextBlock, newChat, retry, send, stop, useChat, type Block, type Message } from '../chat/conversation'
 import { Markdown } from '../chat/markdown'
 import { toolActivity } from '../chat/tools'
-import { useStore } from '../store'
+import { useStore, type Snapshot } from '../store'
 import { PageHeader } from '../ui/components'
 import { Icon } from '../ui/icons'
 
-const STARTERS = [
-  'How is my bench press progressing?',
-  'Which muscles am I training least?',
-  'Summarize my last two weeks of training',
-  'Build me a 45-minute pull day',
-]
-
 const WRITE_TOOLS = new Set(['save_template', 'delete_template', 'create_exercise'])
+
+/** Past-tense labels for finished steps. */
+const toolDone: Record<string, string> = {
+  get_overview: 'Looked at your account',
+  find_exercises: 'Searched exercises',
+  get_template: 'Read a template',
+  list_workouts: 'Looked at your workouts',
+  get_workout: 'Read a workout',
+  exercise_progress: 'Checked your progress',
+  training_volume: 'Added up weekly volume',
+  body_weight: 'Looked at body weight',
+}
+
+type IconName = Parameters<typeof Icon>[0]['name']
+
+/** Suggestions built from the user's own data, so the first tap is relevant. */
+function suggestions(data: Snapshot): { icon: IconName; text: string }[] {
+  const counts = new Map<string, number>()
+  for (const s of data.sessions.filter((x) => x.state === 'completed')) {
+    for (const e of s.exercises) counts.set(e.exerciseId.toUpperCase(), (counts.get(e.exerciseId.toUpperCase()) ?? 0) + 1)
+  }
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+  const name = top ? data.exerciseById.get(top[0])?.name.replace(/\s*\(.*\)\s*$/, '').toLowerCase() : undefined
+  const hasWorkouts = counts.size > 0
+  return [
+    { icon: 'chart', text: name ? `How is my ${name} trending?` : 'How should I track my progress?' },
+    { icon: 'dumbbell', text: hasWorkouts ? 'What should I train today?' : 'Build me a beginner full-body plan' },
+    { icon: 'calendar', text: hasWorkouts ? 'Which muscles am I neglecting?' : 'How many days a week should I lift?' },
+    { icon: 'sparkle', text: 'Build me a 45-minute pull day' },
+  ]
+}
 
 export function Coach() {
   const chat = useChat()
@@ -22,19 +46,53 @@ export function Coach() {
   const input = useRef<HTMLTextAreaElement>(null)
   const end = useRef<HTMLDivElement>(null)
   const empty = chat.messages.length === 0 && !chat.busy
+  const ideas = useMemo(() => suggestions(data), [data])
+
+  // Results of each tool call, by tool_use id, so finished writes can link to what they made.
+  const results = useMemo(() => {
+    const map = new Map<string, Record<string, unknown>>()
+    for (const m of chat.messages) {
+      if (m.role !== 'user') continue
+      for (const b of m.content) {
+        if (b.type !== 'tool_result' || b.is_error || typeof b.content !== 'string') continue
+        try {
+          map.set(String(b.tool_use_id), JSON.parse(b.content))
+        } catch {
+          // Not JSON: nothing to link to.
+        }
+      }
+    }
+    return map
+  }, [chat.messages])
 
   // Follow the conversation as it grows, like a messaging app.
   useEffect(() => {
-    end.current?.scrollIntoView({ block: 'end', behavior: chat.live ? 'auto' : 'smooth' })
-  }, [chat.messages.length, chat.live, chat.activity, chat.pending, chat.error])
+    if (!empty) end.current?.scrollIntoView({ block: 'end', behavior: chat.live ? 'auto' : 'smooth' })
+  }, [empty, chat.messages.length, chat.live, chat.activity, chat.pending, chat.error])
 
-  // Grow the text field with its content, up to a few lines.
+  // Grow the text field with its content, up to about five lines.
   useLayoutEffect(() => {
     const el = input.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`
   }, [draft])
+
+  // While typing, the keyboard takes the tab bar's place (as in Messages), so hide the tab
+  // bar and give the conversation the room.
+  useEffect(() => {
+    const root = document.documentElement
+    const el = input.current
+    const on = () => root.classList.add('composing')
+    const off = () => root.classList.remove('composing')
+    el?.addEventListener('focus', on)
+    el?.addEventListener('blur', off)
+    return () => {
+      el?.removeEventListener('focus', on)
+      el?.removeEventListener('blur', off)
+      off()
+    }
+  }, [])
 
   const submit = (text = draft) => {
     if (!text.trim() || chat.busy) return
@@ -43,103 +101,165 @@ export function Coach() {
   }
 
   return (
-    <div className="coach">
+    <div className={`coach${empty ? ' is-empty' : ''}`}>
       <PageHeader
         account
         title="Coach"
-        action={!empty && <button className="btn btn-ghost" onClick={newChat} disabled={chat.busy}>New chat</button>}
+        action={!empty && (
+          <button className="icon-button coach-new" onClick={newChat} disabled={chat.busy} aria-label="New chat">
+            <Icon name="compose" size={21} />
+          </button>
+        )}
       />
 
       {empty ? (
         <div className="coach-empty">
-          <p className="subtle" style={{ lineHeight: 1.5, margin: '8px 0 20px' }}>
-            Ask about your training. Claude reads your workouts, templates and body weight, and can build or edit templates for you. Nothing changes without your approval.
-          </p>
-          <div className="stack" style={{ gap: 8 }}>
-            {STARTERS.map((s) => (
-              <button key={s} className="card clickable coach-starter" onClick={() => submit(s)}>
-                <span className="spacer">{s}</span>
-                <Icon name="up" size={16} />
+          <div className="coach-hero">
+            <span className="coach-hero-mark"><Icon name="sparkle" size={26} stroke={1.8} /></span>
+            <h2>What are we working on?</h2>
+            <p>Answers come from your own workouts. Changes to your data always wait for your OK.</p>
+          </div>
+          <div className="coach-ideas" role="list" aria-label="Suggestions">
+            {ideas.map((s) => (
+              <button key={s.text} role="listitem" className="coach-idea" onClick={() => submit(s.text)}>
+                <span className="coach-idea-icon"><Icon name={s.icon} size={17} /></span>
+                <span className="spacer">{s.text}</span>
+                <span className="coach-idea-go"><Icon name="up" size={15} stroke={2.2} /></span>
               </button>
             ))}
           </div>
-          {data.sessions.length === 0 && <p className="subtle small" style={{ marginTop: 16 }}>Tip: log a few workouts first so there's something to analyze.</p>}
         </div>
       ) : (
         <div className="coach-thread" aria-live="polite">
-          {chat.messages.map((m, i) => <Turn key={i} message={m} decisions={chat.decisions} />)}
-          {chat.live && <div className="coach-reply"><Markdown text={chat.live} /></div>}
+          {chat.messages.map((m, i) => <Turn key={i} message={m} decisions={chat.decisions} results={results} />)}
+          {chat.live && <div className="coach-reply streaming"><Markdown text={chat.live} /></div>}
           {chat.pending && (
-            <div className="card coach-approval" role="group" aria-label="Approve change">
-              <div className="eyebrow">Approve change</div>
-              <strong style={{ display: 'block', margin: '6px 0 8px', fontSize: 17 }}>{chat.pending.title}</strong>
-              <ul className="coach-lines">{chat.pending.lines.map((l, i) => <li key={i}>{l}</li>)}</ul>
-              <div className="row" style={{ marginTop: 14 }}>
-                <button className="btn btn-secondary" onClick={() => decide(false)}>Decline</button>
-                <button className="btn btn-secondary" style={{ background: chat.pending.danger ? 'var(--danger)' : 'var(--ink)', color: 'var(--bg)', border: 0 }} onClick={() => decide(true)}>
-                  {chat.pending.confirm}
-                </button>
+            <div className={`coach-approval${chat.pending.danger ? ' danger' : ''}`} role="group" aria-label="Approve change">
+              <div className="coach-approval-head">
+                <span className="coach-approval-mark"><Icon name={chat.pending.danger ? 'trash' : 'check'} size={14} stroke={2.4} /></span>
+                Needs your OK
+              </div>
+              <strong className="coach-approval-title">{chat.pending.title}</strong>
+              <ApprovalLines lines={chat.pending.lines} />
+              <div className="coach-approval-actions">
+                <button className="btn coach-decline" onClick={() => decide(false)}>Not now</button>
+                <button className="btn coach-approve" onClick={() => decide(true)}>{chat.pending.confirm}</button>
               </div>
             </div>
           )}
-          {chat.activity && !chat.pending && <div className="coach-activity"><span className="coach-dots" aria-hidden="true"><i /><i /><i /></span>{chat.activity}</div>}
-          {chat.error && <div className="banner warn" role="alert">{chat.error}</div>}
+          {chat.activity && !chat.pending && !chat.live && (
+            <div className="coach-activity"><span className="coach-dots" aria-hidden="true"><i /><i /><i /></span><span className="coach-shimmer">{chat.activity}</span></div>
+          )}
+          {chat.error && (
+            <div className="coach-error" role="alert">
+              <span className="spacer">{chat.error}</span>
+              {!chat.busy && <button className="btn coach-retry" onClick={() => void retry()}><Icon name="repeat" size={15} />Retry</button>}
+            </div>
+          )}
           <div ref={end} />
         </div>
       )}
 
       <form className="coach-composer" onSubmit={(e) => { e.preventDefault(); submit() }}>
-        <textarea
-          ref={input}
-          className="input"
-          rows={1}
-          placeholder="Ask about your training"
-          aria-label="Message"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia('(hover: hover)').matches) {
-              e.preventDefault()
-              submit()
-            }
-          }}
-        />
-        {chat.busy ? (
-          <button type="button" className="coach-send" onClick={stop} aria-label="Stop"><span className="coach-stop" /></button>
-        ) : (
-          <button type="submit" className="coach-send" disabled={!draft.trim()} aria-label="Send"><Icon name="up" size={20} stroke={2.4} /></button>
-        )}
+        <div className="coach-field">
+          <textarea
+            ref={input}
+            rows={1}
+            placeholder="Ask your coach"
+            aria-label="Message"
+            enterKeyHint="send"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                submit()
+              }
+            }}
+          />
+          {chat.busy ? (
+            <button type="button" className="coach-send stop" onClick={stop} aria-label="Stop"><span /></button>
+          ) : (
+            <button type="submit" className="coach-send" disabled={!draft.trim()} aria-label="Send"><Icon name="up" size={18} stroke={2.6} /></button>
+          )}
+        </div>
       </form>
     </div>
   )
 }
 
-function Turn({ message, decisions }: { message: Message; decisions: Record<string, string> }) {
+/** "Name: 3 x 6-10" lines become name/detail rows; a line without a colon is the summary. */
+function ApprovalLines({ lines }: { lines: string[] }) {
+  return (
+    <div className="coach-approval-lines">
+      {lines.map((line, i) => {
+        const at = line.indexOf(': ')
+        if (at === -1) return <div key={i} className="coach-approval-note">{line}</div>
+        return (
+          <div key={i} className="coach-approval-row">
+            <span className="spacer">{line.slice(0, at)}</span>
+            <span className="num coach-approval-detail">{line.slice(at + 2).replaceAll(' x ', ' × ')}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function Turn({ message, decisions, results }: { message: Message; decisions: Record<string, string>; results: Map<string, Record<string, unknown>> }) {
   if (message.role === 'user') {
     const text = message.content.filter((b) => b.type === 'text' && !isContextBlock(b)).map((b) => String(b.text)).join('\n')
     return text ? <div className="coach-user">{text}</div> : null
   }
+  // Consecutive read steps collapse into one quiet line; text and writes show as they are.
+  const parts: ({ kind: 'steps'; names: string[] } | { kind: 'block'; block: Block })[] = []
+  for (const block of message.content) {
+    const readStep = block.type === 'tool_use' && !WRITE_TOOLS.has(String(block.name))
+    const last = parts.at(-1)
+    if (readStep && last?.kind === 'steps') last.names.push(String(block.name))
+    else if (readStep) parts.push({ kind: 'steps', names: [String(block.name)] })
+    else parts.push({ kind: 'block', block })
+  }
   return (
     <>
-      {message.content.map((block, i) => <AssistantBlock key={i} block={block} decisions={decisions} />)}
+      {parts.map((p, i) =>
+        p.kind === 'steps'
+          ? <Steps key={i} names={p.names} />
+          : <AssistantBlock key={i} block={p.block} decisions={decisions} results={results} />,
+      )}
     </>
   )
 }
 
-function AssistantBlock({ block, decisions }: { block: Block; decisions: Record<string, string> }) {
+function Steps({ names }: { names: string[] }) {
+  const labels = [...new Set(names.map((n) => toolDone[n] ?? toolActivity[n] ?? n))]
+  return (
+    <div className="coach-steps">
+      <Icon name="check" size={13} stroke={2.6} />
+      <span>{labels.join(' · ')}</span>
+    </div>
+  )
+}
+
+function AssistantBlock({ block, decisions, results }: { block: Block; decisions: Record<string, string>; results: Map<string, Record<string, unknown>> }) {
   if (block.type === 'text' && typeof block.text === 'string' && block.text.trim()) {
     return <div className="coach-reply"><Markdown text={block.text} /></div>
   }
-  if (block.type === 'tool_use') {
-    const name = String(block.name)
-    const decision = decisions[String(block.id)]
-    if (WRITE_TOOLS.has(name) && decision) {
-      const input = block.input as { name?: string }
-      const what = name === 'delete_template' ? 'Deleted a template' : name === 'create_exercise' ? `Added exercise "${input.name ?? ''}"` : `Saved template "${input.name ?? ''}"`
-      const text = decision === 'approved' ? what : decision === 'declined' ? `You declined: ${what.charAt(0).toLowerCase()}${what.slice(1)}` : `Couldn't save: ${what.charAt(0).toLowerCase()}${what.slice(1)}`
-      return <div className={`coach-tool ${decision}`}><Icon name={decision === 'approved' ? 'check' : 'close'} size={14} stroke={2.4} />{text}</div>
-    }
-    return <div className="coach-tool">{toolActivity[name] ?? name}</div>
+  if (block.type !== 'tool_use') return null
+  const name = String(block.name)
+  const decision = decisions[String(block.id)]
+  if (!decision) return null
+  const input = block.input as { name?: string }
+  const what = name === 'delete_template' ? 'Template deleted' : name === 'create_exercise' ? `Added “${input.name ?? 'exercise'}”` : `Saved “${input.name ?? 'template'}”`
+  if (decision !== 'approved') {
+    return <div className="coach-outcome muted"><Icon name="close" size={14} stroke={2.4} />{decision === 'declined' ? 'You said not now' : "Couldn't save that change"}</div>
   }
-  return null
+  const templateId = name === 'save_template' ? results.get(String(block.id))?.template_id : undefined
+  return (
+    <div className="coach-outcome">
+      <span className="coach-outcome-mark"><Icon name="check" size={12} stroke={3} /></span>
+      <span className="spacer">{what}</span>
+      {typeof templateId === 'string' && <a className="coach-outcome-link" href={`#/templates/${templateId}`}>Open<Icon name="chevron" size={14} /></a>}
+    </div>
+  )
 }

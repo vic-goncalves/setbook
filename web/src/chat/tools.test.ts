@@ -105,7 +105,7 @@ describe('coach tools', () => {
         { exercise_id: CURL, rest_seconds: null, notes: 'Slow negatives', sets: [set(10, 12)] },
       ],
     })
-    expect(p.title).toBe('Create "Pull A"')
+    expect(p.title).toBe('Create “Pull A”')
     expect(p.lines[0]).toBe('Bench Press (Barbell): 2 x 5-8 + 1 warm-up')
     expect(p.lines.at(-1)).toBe('2 exercises, 4 sets')
   })
@@ -122,7 +122,7 @@ describe('coach tools', () => {
 
   it('checks measurement and duplicates for new exercises', () => {
     const base = { name: 'Viking Press', primary_muscle: 'shoulders', secondary_muscles: [], equipment: 'barbell', measurement_type: 'external_load_reps', load_convention: 'total' }
-    expect(proposal('create_exercise', base).title).toBe('Add exercise "Viking Press"')
+    expect(proposal('create_exercise', base).title).toBe('Add exercise “Viking Press”')
     expect(error('create_exercise', { ...base, load_convention: null })).toContain('load_convention')
     expect(error('create_exercise', { ...base, name: 'bench press (barbell)' })).toContain('already exists')
   })

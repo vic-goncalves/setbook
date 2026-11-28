@@ -264,42 +264,101 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
    so it never reads as a box. */
 .sheet .exercise-search { background: #121214; margin: 0 calc(-1 * var(--page)); padding: 0 var(--page) 8px; }
 
-/* Coach (chat) */
-.coach-starter { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; font-size: 15px; color: var(--ink); }
-.coach-starter svg { color: var(--ink-3); transform: rotate(45deg); }
-.coach-thread { display: flex; flex-direction: column; gap: 12px; padding: 8px 0 16px; -webkit-user-select: text; user-select: text; }
-.coach-user {
-  align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 18px 18px 4px 18px;
-  background: var(--raised); border: 0.5px solid #34343a; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.4;
+/* Coach (chat). Built for one-handed phone use: suggestions and the composer sit in thumb
+   reach above the tab bar; the tab bar steps aside while typing, as in Messages. */
+.shell:has(.coach) { padding-bottom: 0; }
+.coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
+.coach .coach-new { color: var(--ink); margin-bottom: 2px; }
+
+.coach-empty { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding-top: 8px; }
+.coach-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 12px 0; }
+.coach-hero-mark {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px; color: var(--ink);
+  background: linear-gradient(145deg, #2c2c31, #1b1b1e); border: 0.5px solid #3a3a40; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
-.coach-reply { line-height: 1.5; overflow-wrap: anywhere; }
-.md p { margin: 0 0 10px; }
+.coach-hero h2 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.15; }
+.coach-hero p { margin: 8px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; max-width: 330px; }
+.coach-ideas { display: flex; flex-direction: column; background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; overflow: hidden; }
+.coach-idea { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 14px; text-align: left; font-size: 16px; color: var(--ink); transition: background-color 0.15s; }
+.coach-idea + .coach-idea { border-top: 0.5px solid var(--hairline); }
+.coach-idea:active { background: var(--raised); }
+.coach-idea-icon { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--raised); color: var(--ink-2); flex: none; }
+.coach-idea-go { color: var(--ink-3); transform: rotate(45deg); display: grid; }
+
+.coach-thread { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 6px 0 20px; -webkit-user-select: text; user-select: text; }
+.coach-user {
+  align-self: flex-end; max-width: 82%; padding: 10px 15px; border-radius: 20px 20px 6px 20px; margin-top: 6px;
+  background: #2a2a2f; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.38; font-size: 17px;
+}
+.coach-reply { font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; color: #ececea; }
+.coach-reply strong { color: var(--ink); font-weight: 650; }
+.coach-reply.streaming .md > :last-child::after { content: ''; display: inline-block; width: 8px; height: 8px; margin-left: 4px; border-radius: 999px; background: var(--ink); animation: coach-pulse 1s infinite ease-in-out; vertical-align: middle; }
+@keyframes coach-pulse { 50% { opacity: 0.2; } }
+.md p { margin: 0 0 12px; }
 .md p:last-child, .md ul:last-child, .md ol:last-child { margin-bottom: 0; }
-.md ul, .md ol { margin: 0 0 10px; padding-left: 22px; }
-.md li { margin: 3px 0; }
-.md h4 { margin: 14px 0 6px; font-size: 16px; }
-.md code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; background: var(--raised); padding: 1px 5px; border-radius: 5px; }
-.coach-tool { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 13px; color: var(--ink-3); padding: 2px 0; }
-.coach-tool.approved { color: var(--done); }
-.coach-tool.declined, .coach-tool.failed { color: var(--ink-2); }
-.coach-activity { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--ink-2); }
+.md ul, .md ol { margin: 0 0 12px; padding-left: 20px; }
+.md li { margin: 5px 0; padding-left: 2px; }
+.md li::marker { color: var(--ink-3); }
+.md h4 { margin: 18px 0 6px; font-size: 17px; font-weight: 650; }
+.md code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; background: var(--raised); padding: 1px 5px; border-radius: 5px; }
+
+.coach-steps { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-3); margin: -2px 0; }
+.coach-steps svg { flex: none; color: var(--ink-3); }
+.coach-activity { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-2); min-height: 24px; }
 .coach-dots { display: inline-flex; gap: 4px; }
 .coach-dots i { width: 6px; height: 6px; border-radius: 999px; background: var(--ink-2); animation: coach-dot 1.2s infinite ease-in-out; }
 .coach-dots i:nth-child(2) { animation-delay: 0.15s; }
 .coach-dots i:nth-child(3) { animation-delay: 0.3s; }
 @keyframes coach-dot { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
-.coach-approval { border-color: #3a3a40; }
-.coach-lines { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; line-height: 1.5; }
-.coach-composer {
-  position: sticky; bottom: var(--tabbar); z-index: 10; display: flex; align-items: flex-end; gap: 8px;
-  margin: 0 calc(-1 * var(--page)); padding: 10px var(--page) 12px;
-  background: linear-gradient(to bottom, rgba(11, 11, 12, 0), var(--bg) 14px);
+.coach-shimmer {
+  background: linear-gradient(90deg, var(--ink-3) 0%, var(--ink) 50%, var(--ink-3) 100%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: coach-shimmer 1.8s linear infinite;
 }
-.coach-composer .input { resize: none; padding: 12px 14px; line-height: 1.35; min-height: 46px; border-radius: 23px; }
-.coach-send { flex: none; width: 46px; height: 46px; border-radius: 999px; background: var(--ink); color: var(--bg); display: grid; place-items: center; }
+@keyframes coach-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+.coach-approval { background: var(--surface); border: 0.5px solid #3a3a40; border-radius: 20px; padding: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); animation: pop 0.22s var(--ease); }
+.coach-approval-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.coach-approval-mark { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; background: var(--done-soft); color: var(--done); }
+.coach-approval.danger .coach-approval-mark { background: rgba(240, 100, 90, 0.14); color: var(--danger); }
+.coach-approval-title { display: block; margin: 10px 0 12px; font-size: 19px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.25; }
+.coach-approval-lines { border-top: 0.5px solid var(--hairline); }
+.coach-approval-row { display: flex; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--hairline); font-size: 15px; }
+.coach-approval-detail { color: var(--ink-2); white-space: nowrap; }
+.coach-approval-note { padding: 10px 0 0; font-size: 13px; color: var(--ink-3); }
+.coach-approval-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 16px; }
+.coach-decline { background: var(--raised); color: var(--ink); min-height: 50px; border-radius: 14px; }
+.coach-approve { background: var(--ink); color: var(--bg); min-height: 50px; border-radius: 14px; font-size: 17px; }
+.coach-approval.danger .coach-approve { background: var(--danger); color: #fff; }
+
+.coach-outcome { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--done-soft); color: var(--ink); font-size: 15px; font-weight: 500; }
+.coach-outcome-mark { width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; background: var(--done); color: var(--bg); flex: none; }
+.coach-outcome-link { display: inline-flex; align-items: center; gap: 2px; color: var(--done); font-weight: 600; font-size: 15px; padding: 4px 0 4px 8px; }
+.coach-outcome.muted { background: none; padding: 0; color: var(--ink-3); font-size: 13px; gap: 6px; }
+
+.coach-error { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 14px; background: rgba(229, 164, 75, 0.1); border: 0.5px solid rgba(229, 164, 75, 0.4); font-size: 15px; line-height: 1.35; }
+.coach-retry { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--raised); font-size: 15px; gap: 6px; }
+
+.coach-composer {
+  position: sticky; bottom: var(--tabbar); z-index: 25; margin: 0 calc(-1 * var(--page)); padding: 8px var(--page) 10px;
+  background: rgba(11, 11, 12, 0.88); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+}
+.coach-field {
+  display: flex; align-items: flex-end; gap: 6px; padding: 5px 5px 5px 16px; border-radius: 24px;
+  background: var(--surface); border: 0.5px solid #34343a; transition: border-color 0.15s;
+}
+.coach-field:focus-within { border-color: #4a4a52; }
+.coach-field textarea {
+  flex: 1; min-width: 0; resize: none; border: 0; background: none; padding: 8px 0; margin: 0; line-height: 1.35; font-size: 17px; max-height: 132px;
+}
+.coach-field textarea::placeholder { color: var(--ink-3); }
+.coach-field textarea:focus { outline: none; }
+.coach-send { flex: none; width: 36px; height: 36px; border-radius: 999px; background: var(--ink); color: var(--bg); display: grid; place-items: center; transition: transform 0.12s var(--ease), background-color 0.15s; }
+.coach-send:active:not(:disabled) { transform: scale(0.92); }
 .coach-send:disabled { opacity: 1; background: var(--raised); color: var(--ink-3); }
-.coach-stop { width: 14px; height: 14px; border-radius: 3px; background: var(--bg); }
-/* The composer sits on the tab bar, so the page doesn't need the usual bottom padding. */
-.shell:has(.coach) { padding-bottom: 0; }
-.coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top) - 60px); display: flex; flex-direction: column; }
-.coach-thread, .coach-empty { flex: 1; }
+.coach-send.stop span { width: 12px; height: 12px; border-radius: 3px; background: var(--bg); }
+
+/* Typing on a phone: the keyboard stands in for the tab bar. */
+@media (max-width: 700px) {
+  .composing .tabbar { display: none; }
+  .composing .coach-composer { bottom: 0; }
+}
