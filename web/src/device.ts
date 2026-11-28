@@ -71,68 +71,70 @@ export function registerServiceWorker() {
 }
 
 /**
- * iOS: after the keyboard closes, Safari can leave the layout shifted up, with a black band
- * under the tab bar, until the page is scrolled. A real scroll makes it re-lay out. This waits
- * until the keyboard has finished closing (so nothing competes with its animation), then
- * scrolls once:
- * - a page that can scroll moves by 1px and back;
- * - a page exactly one screen tall gets room at the bottom, scrolls into it while its
- *   content is shifted by the same amount (so nothing visibly moves), and undoes all three.
+ * iOS: after the keyboard closes, an installed web app can stay "short" for a while: the page
+ * is where it should be, but the screen height still excludes the keyboard's toolbar, so the
+ * tab bar sits high with a black band under it until something scrolls. (Seen in a screen
+ * recording: about a second of band, then recovery on the next scroll.)
+ *
+ * So remember the full screen height while no keyboard is up. After a keyboard closes, wait
+ * for the height to settle; only if it settled short, scroll by 1pt and back, which is
+ * invisible and makes iOS recompute. If that doesn't take, try a few points more. If the height
+ * comes back on its own, nothing happens.
  */
-const ROOM = 80
+const NUDGES = [1, 8, 40]
 
 export function settleAfterKeyboard() {
-  const vv = window.visualViewport
-  let waiting = false
+  let fullHeight = window.innerHeight
+  let watching = false
   const typing = () => {
     const el = document.activeElement
     return el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit'].includes(el.type))
   }
 
-  const settle = () => {
+  window.addEventListener('resize', () => {
+    if (!typing()) fullHeight = Math.max(fullHeight, window.innerHeight)
+  })
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => (fullHeight = window.innerHeight), 600)
+  })
+
+  const nudge = (by: number) => {
     const root = document.documentElement
     const y = window.scrollY
-    if (root.scrollHeight - window.innerHeight < 2) {
-      const shell = document.querySelector<HTMLElement>('main.shell')
-      root.style.paddingBottom = `${ROOM}px`
-      if (shell) shell.style.transform = `translateY(${ROOM}px)`
-      window.scrollTo(0, ROOM)
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        window.scrollTo(0, 0)
-        root.style.paddingBottom = ''
-        if (shell) shell.style.transform = ''
-      }))
-      return
-    }
-    const atEnd = y + window.innerHeight >= root.scrollHeight - 4
-    root.style.minHeight = 'calc(100% + 1px)'
-    window.scrollTo(0, y + 1)
+    const short = root.scrollHeight - window.innerHeight < by
+    if (short) root.style.minHeight = `calc(100% + ${by}px)`
+    window.scrollTo(0, y + by)
     requestAnimationFrame(() => {
-      root.style.minHeight = ''
-      const max = Math.max(0, root.scrollHeight - window.innerHeight)
-      window.scrollTo(0, atEnd ? max : Math.min(y, max))
+      window.scrollTo(0, y)
+      if (short) root.style.minHeight = ''
     })
   }
 
-  /** Once per keyboard close: watch each frame until the keyboard is gone (or ~1 s passes). */
   const afterKeyboard = () => {
-    if (waiting) return
-    waiting = true
+    if (watching) return
+    watching = true
     const started = performance.now()
+    let last = -1
+    let stable = 0
+    let tries = 0
     const check = () => {
-      if (typing()) {
-        waiting = false // moved to another field: the keyboard is staying up
+      const height = window.innerHeight
+      const missing = fullHeight - height
+      if (typing() || missing <= 1 || performance.now() - started > 3000) {
+        watching = false
         return
       }
-      const closed = !vv || vv.height >= window.innerHeight - 2
-      if (closed || performance.now() - started > 1000) {
-        waiting = false
-        settle()
-        return
+      stable = height === last ? stable + 1 : 0
+      last = height
+      // Settled, and short by about a toolbar (not a whole keyboard, which is still closing).
+      if (stable >= 2 && missing < 160 && tries < NUDGES.length) {
+        nudge(NUDGES[tries]!)
+        tries++
+        stable = 0
       }
-      requestAnimationFrame(check)
+      setTimeout(check, 100)
     }
-    requestAnimationFrame(check)
+    setTimeout(check, 100)
   }
 
   document.addEventListener('focusout', (e) => {
