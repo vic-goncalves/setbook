@@ -69,3 +69,41 @@ export function registerServiceWorker() {
     navigator.serviceWorker.register('./sw.js').catch(() => undefined)
   })
 }
+
+/**
+ * iOS: after the keyboard closes, Safari can leave the layout shifted up, with a black band
+ * under the tab bar, until the page is scrolled. It also happens on pages too short to
+ * scroll, where nothing can be scrolled to fix it. So once the keyboard is gone, make the
+ * page briefly 1px taller, scroll by 1px and back: a real scroll that makes iOS re-lay out.
+ */
+export function settleAfterKeyboard() {
+  const vv = window.visualViewport
+  let lastHeight = vv?.height ?? 0
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const typing = () => {
+    const el = document.activeElement
+    return el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit'].includes(el.type))
+  }
+  const settle = () => {
+    clearTimeout(timer)
+    timer = setTimeout(() => {
+      if (typing()) return // moved to another field: the keyboard is still up
+      const root = document.documentElement
+      const y = window.scrollY
+      root.style.minHeight = 'calc(100% + 1px)'
+      window.scrollTo(0, y + 1)
+      requestAnimationFrame(() => {
+        const max = Math.max(0, root.scrollHeight - window.innerHeight)
+        window.scrollTo(0, Math.min(y, max))
+        root.style.minHeight = ''
+      })
+    }, 100)
+  }
+  document.addEventListener('focusout', (e) => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) settle()
+  })
+  vv?.addEventListener('resize', () => {
+    if (vv.height > lastHeight + 40) settle()
+    lastHeight = vv.height
+  })
+}

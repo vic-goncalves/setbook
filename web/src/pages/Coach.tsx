@@ -28,34 +28,6 @@ export function Coach() {
     end.current?.scrollIntoView({ block: 'end', behavior: chat.live ? 'auto' : 'smooth' })
   }, [chat.messages.length, chat.live, chat.activity, chat.pending, chat.error])
 
-  // iOS Safari: after the keyboard closes, the page can stay scrolled past its end, leaving
-  // a black band at the bottom until the next scroll. Settle the scroll once the keyboard is
-  // gone (the visual viewport grows back) and when the field loses focus.
-  useEffect(() => {
-    const vv = window.visualViewport
-    let last = vv?.height ?? 0
-    let timer: ReturnType<typeof setTimeout> | undefined
-    const settle = () => {
-      clearTimeout(timer)
-      timer = setTimeout(() => {
-        const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-        window.scrollTo(0, Math.min(window.scrollY, max))
-      }, 120)
-    }
-    const onResize = () => {
-      if (vv && vv.height > last) settle()
-      last = vv?.height ?? 0
-    }
-    const field = input.current
-    vv?.addEventListener('resize', onResize)
-    field?.addEventListener('blur', settle)
-    return () => {
-      clearTimeout(timer)
-      vv?.removeEventListener('resize', onResize)
-      field?.removeEventListener('blur', settle)
-    }
-  }, [])
-
   // Grow the text field with its content, up to a few lines.
   useLayoutEffect(() => {
     const el = input.current
