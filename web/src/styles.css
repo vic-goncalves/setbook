@@ -280,6 +280,8 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
   /* With the tab bar hidden, the page still fills the screen, so the composer sits at the
      bottom edge (as it does in a long thread) instead of leaving the tab bar's space empty. */
   .composing .coach { min-height: calc(100dvh - var(--safe-top)); }
+  /* ...and the greeting and suggestions stay exactly where they were: only the composer moves. */
+  .composing .coach-empty { padding-bottom: calc(16px + var(--tabbar)); }
 }
 .coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
 .coach-actions { display: flex; align-items: center; gap: 2px; margin-bottom: 2px; }

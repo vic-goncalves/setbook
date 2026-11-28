@@ -78,6 +78,7 @@ export function registerServiceWorker() {
  * room at the bottom, scrolls into it and back while the keyboard is still sliding away.
  */
 const ROOM = 80
+let lastNudge = 0
 export function settleAfterKeyboard() {
   const vv = window.visualViewport
   let lastHeight = vv?.height ?? 0
@@ -93,13 +94,19 @@ export function settleAfterKeyboard() {
       const root = document.documentElement
       const y = window.scrollY
       if (root.scrollHeight - window.innerHeight < 2) {
-        // Too short to scroll: add room, scroll into it, then back and remove it.
+        // Too short to scroll: add room and scroll into it, while shifting the page content
+        // down by the same amount so nothing visibly moves, then undo all three together.
+        if (Date.now() - lastNudge < 800) return // focusout and the keyboard's resize: once
+        lastNudge = Date.now()
+        const shell = document.querySelector<HTMLElement>('main.shell')
         root.style.paddingBottom = `${ROOM}px`
+        if (shell) shell.style.transform = `translateY(${ROOM}px)`
         window.scrollTo(0, ROOM)
-        setTimeout(() => {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
           window.scrollTo(0, 0)
           root.style.paddingBottom = ''
-        }, 40)
+          if (shell) shell.style.transform = ''
+        }))
         return
       }
       // A chat scrolled to its newest message should stay there.
