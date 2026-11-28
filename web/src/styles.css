@@ -417,9 +417,9 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .train-list-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
 .train-new { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: var(--raised); color: var(--ink); }
 .train-list { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; overflow: hidden; }
-.train-row { display: flex; align-items: center; gap: 12px; padding: 0 12px 0 14px; min-height: 80px; }
+.train-row { display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px; min-height: 80px; }
 .train-row { position: relative; }
-.train-row + .train-row::before { content: ''; position: absolute; top: 0; left: 72px; right: 0; border-top: 0.5px solid var(--hairline); }
+.train-row + .train-row::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; border-top: 0.5px solid var(--hairline); }
 .train-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 0; }
 .train-row-main:active { opacity: 0.6; }
 .train-row-name { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -538,7 +538,7 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 /* Template rows swipe left to delete, like other iPhone lists. */
 .train-list .swipe { border-radius: 0; }
 .train-list .swipe-content { background: var(--surface); }
-.train-list .swipe + .swipe .train-row::before { content: ''; position: absolute; top: 0; left: 72px; right: 0; border-top: 0.5px solid var(--hairline); }
+.train-list .swipe + .swipe .train-row::before { content: ''; position: absolute; top: 0; left: 16px; right: 0; border-top: 0.5px solid var(--hairline); }
 .tpl-footer { display: flex; justify-content: center; gap: 28px; margin-top: 20px; }
 .tpl-footer button { font-size: 15px; font-weight: 500; color: var(--ink-2); padding: 10px 4px; }
 .tpl-footer .danger { color: var(--danger); }

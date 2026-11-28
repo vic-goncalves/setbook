@@ -10,17 +10,6 @@ import { Confirm, PageHeader, useNow } from '../ui/components'
 import { SwipeRow } from '../ui/swipe'
 import { Icon } from '../ui/icons'
 
-/** A template's tile: its day number ("1 · Push" -> 1) or first letter. */
-function tileOf(name: string): string {
-  const n = name.match(/^\s*(\d{1,2})\b/)
-  return n ? n[1]! : (name.trim().match(/[\p{L}\p{N}]/u)?.[0] ?? '•').toUpperCase()
-}
-
-/** The name without its day number when the tile shows it: "1 · Push" -> "Push". */
-function displayName(name: string): string {
-  return name.replace(/^\s*\d{1,2}\s*[·.:)\-–]\s*/, '') || name
-}
-
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
@@ -106,9 +95,8 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
               return (
                 <SwipeRow key={t.id} onDelete={() => setDeleting(t)}>
                   <div className="train-row">
-                    <a className="train-tile" href={`#/templates/${t.id}`} aria-hidden="true" tabIndex={-1}>{tileOf(t.name)}</a>
                     <a className="train-row-main" href={`#/templates/${t.id}`}>
-                      <span className="train-row-name">{displayName(t.name)}</span>
+                      <span className="train-row-name">{t.name}</span>
                       <span className="train-row-meta">{musclesOf(t, data.exerciseById) || 'No exercises yet'}</span>
                       <span className="train-row-meta faint">{plural(workingSets(t), 'set')} · {estimatedMinutes(t)} min · {last ? capitalize(relativeDay(last)) : 'New'}</span>
                     </a>
