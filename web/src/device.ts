@@ -72,59 +72,70 @@ export function registerServiceWorker() {
 
 /**
  * iOS: after the keyboard closes, Safari can leave the layout shifted up, with a black band
- * under the tab bar, until the page is scrolled. A real scroll makes it re-lay out (a long
- * Coach thread gets one for free when it scrolls to its newest message). A page exactly one
- * screen tall has nothing to scroll, and a 1px nudge isn't enough there, so it briefly gets
- * room at the bottom, scrolls into it and back while the keyboard is still sliding away.
+ * under the tab bar, until the page is scrolled. A real scroll makes it re-lay out. This waits
+ * until the keyboard has finished closing (so nothing competes with its animation), then
+ * scrolls once:
+ * - a page that can scroll moves by 1px and back;
+ * - a page exactly one screen tall gets room at the bottom, scrolls into it while its
+ *   content is shifted by the same amount (so nothing visibly moves), and undoes all three.
  */
 const ROOM = 80
-let lastNudge = 0
+
 export function settleAfterKeyboard() {
   const vv = window.visualViewport
-  let lastHeight = vv?.height ?? 0
-  let timer: ReturnType<typeof setTimeout> | undefined
+  let waiting = false
   const typing = () => {
     const el = document.activeElement
     return el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !['checkbox', 'radio', 'button', 'submit'].includes(el.type))
   }
+
   const settle = () => {
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      if (typing()) return // moved to another field: the keyboard is still up
-      const root = document.documentElement
-      const y = window.scrollY
-      if (root.scrollHeight - window.innerHeight < 2) {
-        // Too short to scroll: add room and scroll into it, while shifting the page content
-        // down by the same amount so nothing visibly moves, then undo all three together.
-        if (Date.now() - lastNudge < 800) return // focusout and the keyboard's resize: once
-        lastNudge = Date.now()
-        const shell = document.querySelector<HTMLElement>('main.shell')
-        root.style.paddingBottom = `${ROOM}px`
-        if (shell) shell.style.transform = `translateY(${ROOM}px)`
-        window.scrollTo(0, ROOM)
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          window.scrollTo(0, 0)
-          root.style.paddingBottom = ''
-          if (shell) shell.style.transform = ''
-        }))
+    const root = document.documentElement
+    const y = window.scrollY
+    if (root.scrollHeight - window.innerHeight < 2) {
+      const shell = document.querySelector<HTMLElement>('main.shell')
+      root.style.paddingBottom = `${ROOM}px`
+      if (shell) shell.style.transform = `translateY(${ROOM}px)`
+      window.scrollTo(0, ROOM)
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        window.scrollTo(0, 0)
+        root.style.paddingBottom = ''
+        if (shell) shell.style.transform = ''
+      }))
+      return
+    }
+    const atEnd = y + window.innerHeight >= root.scrollHeight - 4
+    root.style.minHeight = 'calc(100% + 1px)'
+    window.scrollTo(0, y + 1)
+    requestAnimationFrame(() => {
+      root.style.minHeight = ''
+      const max = Math.max(0, root.scrollHeight - window.innerHeight)
+      window.scrollTo(0, atEnd ? max : Math.min(y, max))
+    })
+  }
+
+  /** Once per keyboard close: watch each frame until the keyboard is gone (or ~1 s passes). */
+  const afterKeyboard = () => {
+    if (waiting) return
+    waiting = true
+    const started = performance.now()
+    const check = () => {
+      if (typing()) {
+        waiting = false // moved to another field: the keyboard is staying up
         return
       }
-      // A chat scrolled to its newest message should stay there.
-      const atEnd = y + window.innerHeight >= root.scrollHeight - 4
-      root.style.minHeight = 'calc(100% + 1px)'
-      window.scrollTo(0, y + 1)
-      requestAnimationFrame(() => {
-        root.style.minHeight = ''
-        const max = Math.max(0, root.scrollHeight - window.innerHeight)
-        window.scrollTo(0, atEnd ? max : Math.min(y, max))
-      })
-    }, 100)
+      const closed = !vv || vv.height >= window.innerHeight - 2
+      if (closed || performance.now() - started > 1000) {
+        waiting = false
+        settle()
+        return
+      }
+      requestAnimationFrame(check)
+    }
+    requestAnimationFrame(check)
   }
+
   document.addEventListener('focusout', (e) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) settle()
-  })
-  vv?.addEventListener('resize', () => {
-    if (vv.height > lastHeight + 40) settle()
-    lastHeight = vv.height
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) afterKeyboard()
   })
 }

@@ -85,27 +85,6 @@ export function Coach() {
     el.style.height = `${Math.min(el.scrollHeight, 132)}px`
   }, [draft])
 
-  // While typing, the keyboard takes the tab bar's place (as in Messages), so hide the tab
-  // bar and give the conversation the room.
-  useEffect(() => {
-    const root = document.documentElement
-    const el = input.current
-    const on = () => root.classList.add('composing')
-    // The tab bar coming back makes the page taller: stay on the newest message if we were there.
-    const off = () => {
-      const atEnd = window.scrollY + window.innerHeight >= root.scrollHeight - 4
-      root.classList.remove('composing')
-      if (atEnd) requestAnimationFrame(() => window.scrollTo(0, root.scrollHeight))
-    }
-    el?.addEventListener('focus', on)
-    el?.addEventListener('blur', off)
-    return () => {
-      el?.removeEventListener('focus', on)
-      el?.removeEventListener('blur', off)
-      off()
-    }
-  }, [])
-
   const submit = (text = draft) => {
     if (!text.trim() || chat.busy) return
     setDraft('')

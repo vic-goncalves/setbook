@@ -271,18 +271,10 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .sheet .exercise-search { background: #121214; margin: 0 calc(-1 * var(--page)); padding: 0 var(--page) 8px; }
 
 /* Coach (chat). Built for one-handed phone use: suggestions and the composer sit in thumb
-   reach above the tab bar; the tab bar steps aside while typing, as in Messages. */
+   reach above the tab bar. */
 /* The page ends where the tab bar starts, so the sticky composer rests above it and never
-   covers the last message. While typing on a phone the tab bar is hidden. */
+   covers the last message. The keyboard covers the tab bar while typing; nothing moves. */
 .shell:has(.coach) { padding-bottom: var(--tabbar); }
-@media (max-width: 700px) {
-  .composing .shell:has(.coach) { padding-bottom: 0; }
-  /* With the tab bar hidden, the page still fills the screen, so the composer sits at the
-     bottom edge (as it does in a long thread) instead of leaving the tab bar's space empty. */
-  .composing .coach { min-height: calc(100dvh - var(--safe-top)); }
-  /* ...and the greeting and suggestions stay exactly where they were: only the composer moves. */
-  .composing .coach-empty { padding-bottom: calc(16px + var(--tabbar)); }
-}
 .coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
 .coach-actions { display: flex; align-items: center; gap: 2px; margin-bottom: 2px; }
 .coach-actions .icon-button { color: var(--ink); }
@@ -376,12 +368,6 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .coach-send:active:not(:disabled) { transform: scale(0.92); }
 .coach-send:disabled { opacity: 1; background: var(--raised); color: var(--ink-3); }
 .coach-send.stop span { width: 12px; height: 12px; border-radius: 3px; background: var(--bg); }
-
-/* Typing on a phone: the keyboard stands in for the tab bar. */
-@media (max-width: 700px) {
-  .composing .tabbar { display: none; }
-  .composing .coach-composer { bottom: 0; }
-}
 
 /* Chat history sheet: grouped by date like Notes, two-line rows, swipe left to delete. */
 .coach-history { padding-bottom: 8px; }
