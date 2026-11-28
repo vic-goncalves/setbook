@@ -265,3 +265,69 @@ export function bodyWeightSummary(entries: BodyMeasurement[], range: ChartRange,
     change: daily.length >= 2 && first && last ? { from: first.day, to: last.day, kilograms: last.meanKilograms - first.meanKilograms } : undefined,
   }
 }
+
+// MARK: Workout highlights (History)
+
+export interface ExerciseHighlight {
+  exerciseId: string
+  /** Heaviest completed working set (least assistance for assisted), or the most reps without load. */
+  top?: WorkoutSet
+  /** Same exercise's top set in the previous workout that had it. */
+  previous?: { set: WorkoutSet; date: string }
+  /** Change in the top set's load (kg); for bodyweight sets, in reps. Undefined the first time. */
+  change?: number
+  /** Change in the top set's reps when its load is the same as last time's. */
+  repChange?: number
+  /** True when the top set beats every earlier workout (heavier, or same load and more reps). */
+  record: boolean
+  /** Sum of load x reps over completed working sets (kg); per-hand loads count once. */
+  volumeKg: number
+}
+
+function topSet(sets: WorkoutSet[], m: Measurement): WorkoutSet | undefined {
+  if (sets.length === 0) return undefined
+  const assisted = m.type === 'assisted_bodyweight_reps'
+  return sets.reduce((a, b) => {
+    const diff = loadKg(b) - loadKg(a)
+    if (Math.abs(diff) >= 0.001) return (assisted ? diff < 0 : diff > 0) ? b : a
+    return (b.reps ?? 0) > (a.reps ?? 0) ? b : a
+  })
+}
+
+/** Does a beat b? Load first (less is better when assisted), then reps. */
+function beats(a: WorkoutSet, b: WorkoutSet, m: Measurement): boolean {
+  const diff = loadKg(a) - loadKg(b)
+  if (Math.abs(diff) >= 0.001) return m.type === 'assisted_bodyweight_reps' ? diff < 0 : diff > 0
+  return (a.reps ?? 0) > (b.reps ?? 0)
+}
+
+/** Per exercise in a workout: its top set, how it compares with last time, and records. */
+export function workoutHighlights(session: WorkoutSession, all: WorkoutSession[]): ExerciseHighlight[] {
+  const earlier = all.filter((s) => s.state === 'completed' && s.id !== session.id && s.startedAt < session.startedAt)
+  return session.exercises.map((e) => {
+    const sets = qualifyingSets({ sessionId: session.id, sessionName: session.name, startedAt: session.startedAt, measurement: e.measurement, sets: e.sets })
+    const top = topSet(sets, e.measurement)
+    const volumeKg = e.measurement.type === 'external_load_reps' ? sets.reduce((sum, s) => sum + loadKg(s) * (s.reps ?? 0), 0) : 0
+    const history = exerciseRecords(earlier, e.exerciseId).filter((r) => sameMeasurement(r.measurement, e.measurement))
+    const prevRecord = history.at(-1)
+    const prevTop = prevRecord ? topSet(qualifyingSets(prevRecord), e.measurement) : undefined
+    let change: number | undefined
+    if (top && prevTop) change = tracksLoad(e.measurement) ? loadKg(top) - loadKg(prevTop) : (top.reps ?? 0) - (prevTop.reps ?? 0)
+    let repChange: number | undefined
+    if (top && prevTop && tracksLoad(e.measurement) && Math.abs(change ?? 0) < 0.001) {
+      change = 0
+      repChange = (top.reps ?? 0) - (prevTop.reps ?? 0)
+    }
+    const best = history.map((r) => topSet(qualifyingSets(r), e.measurement)).filter((s): s is WorkoutSet => !!s)
+      .reduce<WorkoutSet | undefined>((a, b) => (!a || beats(b, a, e.measurement) ? b : a), undefined)
+    return {
+      exerciseId: e.exerciseId,
+      top,
+      previous: prevTop && prevRecord ? { set: prevTop, date: prevRecord.startedAt } : undefined,
+      change,
+      repChange,
+      record: !!top && !!best && beats(top, best, e.measurement),
+      volumeKg,
+    }
+  })
+}
