@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DEV_AUTH, devSignIn, startGoogleSignIn } from '../api'
-import { Icon } from '../ui/icons'
+import { Logo } from '../ui/logo'
 
 export function SignIn({ error, onSignedIn }: { error?: string; onSignedIn: () => void }) {
   const [busy, setBusy] = useState(false)
@@ -9,7 +9,7 @@ export function SignIn({ error, onSignedIn }: { error?: string; onSignedIn: () =
 
   return (
     <main className="shell" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: 440 }}>
-      <div className="brand-mark" style={{ width: 64, height: 64, borderRadius: 18 }}><Icon name="dumbbell" size={30} /></div>
+      <Logo size={72} />
       <h1 style={{ fontSize: 44, letterSpacing: -1, margin: '20px 0 8px' }}>Setbook</h1>
       <p className="subtle" style={{ fontSize: 19, lineHeight: 1.45, margin: 0 }}>
         Know what to do today, log it in seconds, and see whether you're getting stronger.

@@ -5,6 +5,7 @@ import { navigate, useRoute } from './router'
 import { store, useStore } from './store'
 import { Toast } from './ui/components'
 import { Icon } from './ui/icons'
+import { Logo } from './ui/logo'
 import { SignIn } from './pages/SignIn'
 import { Train } from './pages/Train'
 import { TemplateEditor } from './pages/TemplateEditor'
@@ -114,7 +115,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       {!immersive && (
         <nav className="topbar" aria-label="Primary">
           <div className="topbar-inner">
-            <a className="brand" href="#/train"><span className="brand-mark"><Icon name="dumbbell" size={16} /></span>Setbook</a>
+            <a className="brand" href="#/train"><Logo size={28} />Setbook</a>
             {tabs.map(([key, label]) => (
               <a key={key} className={`tab${section === key ? ' active' : ''}`} href={`#/${key}`} aria-current={section === key ? 'page' : undefined}>{label}</a>
             ))}
