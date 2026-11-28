@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { ApiError, apiStream, currentUser } from '../api'
-import { localTimeZone } from '../domain/types'
+import { ApiError, api, apiStream, currentUser } from '../api'
+import { localTimeZone, newId } from '../domain/types'
 import { currentPrefs } from '../prefs'
 import { runTool, serialize, toolActivity, type Proposal } from './tools'
 
@@ -10,6 +10,10 @@ import { runTool, serialize, toolActivity, type Proposal } from './tools'
  *
  * History is append-only and assistant content is stored exactly as the API returned it
  * (thinking blocks included): the API checks earlier turns are unchanged.
+ *
+ * Each conversation is saved to the account after every turn (PUT /v1/chats/:id), so it can be
+ * reopened and continued on any device. The open one is also kept on this device, so it
+ * shows instantly and survives being offline.
  */
 
 export type Block = { type: string; [key: string]: unknown }
@@ -23,6 +27,8 @@ export interface PendingApproval extends Omit<Proposal, 'apply'> {
 }
 
 export interface ChatState {
+  /** This conversation's id on the server. */
+  id: string
   messages: Message[]
   busy: boolean
   /** Text of the reply being streamed. */
@@ -47,22 +53,85 @@ function key() {
   return `${STORAGE_PREFIX}${currentUser()?.id ?? 'anon'}`
 }
 
+function blank(): ChatState {
+  return { id: newId(), messages: [], busy: false, live: '', decisions: {} }
+}
+
 function load(): ChatState {
-  const blank: ChatState = { messages: [], busy: false, live: '', decisions: {} }
   try {
-    const saved = JSON.parse(localStorage.getItem(key()) ?? 'null') as Pick<ChatState, 'messages' | 'decisions'> | null
-    return saved ? { ...blank, messages: saved.messages ?? [], decisions: saved.decisions ?? {} } : blank
+    const saved = JSON.parse(localStorage.getItem(key()) ?? 'null') as Partial<Pick<ChatState, 'id' | 'messages' | 'decisions'>> | null
+    // Chats saved before history existed have no id: they get one and are uploaded on the next turn.
+    return saved ? { ...blank(), id: saved.id ?? newId(), messages: saved.messages ?? [], decisions: saved.decisions ?? {} } : blank()
   } catch {
-    return blank
+    return blank()
   }
 }
 
 function save() {
   try {
-    localStorage.setItem(key(), JSON.stringify({ messages: state.messages, decisions: state.decisions }))
+    localStorage.setItem(key(), JSON.stringify({ id: state.id, messages: state.messages, decisions: state.decisions }))
   } catch {
     // Storage full or unavailable: the chat still works, it just won't survive a reload.
   }
+}
+
+/** The first thing the user asked, as the chat's name in the history list. */
+export function chatTitle(messages: Message[]): string {
+  for (const m of messages) {
+    if (m.role !== 'user') continue
+    const text = m.content.find((b) => b.type === 'text' && !isContextBlock(b))?.text
+    if (typeof text === 'string' && text.trim()) {
+      const line = text.trim().replace(/\s+/g, ' ')
+      return line.length > 80 ? `${line.slice(0, 79)}…` : line
+    }
+  }
+  return 'New chat'
+}
+
+let uploading: Promise<void> | undefined
+let uploadAgain = false
+
+/** Saves the open conversation to the account. Failures are kept quiet and retried next turn. */
+function upload() {
+  if (state.messages.length === 0) return
+  if (uploading) {
+    uploadAgain = true
+    return
+  }
+  const { id, messages, decisions } = state
+  uploading = api('PUT', `/v1/chats/${id}`, { title: chatTitle(messages), messages, decisions })
+    .then(() => undefined, () => undefined)
+    .finally(() => {
+      uploading = undefined
+      if (uploadAgain) {
+        uploadAgain = false
+        upload()
+      }
+    })
+}
+
+export interface ChatSummary {
+  id: string
+  title: string
+  updatedAt: string
+}
+
+export async function listChats(): Promise<ChatSummary[]> {
+  return (await api<{ chats: ChatSummary[] }>('GET', '/v1/chats')).chats
+}
+
+/** Opens a saved conversation to read or continue. */
+export async function openChat(id: string) {
+  if (state.busy) return
+  const chat = await api<{ id: string; messages: Message[]; decisions: ChatState['decisions'] }>('GET', `/v1/chats/${id}`)
+  state = { ...blank(), id: chat.id, messages: chat.messages, decisions: chat.decisions ?? {} }
+  save()
+  listeners.forEach((l) => l())
+}
+
+export async function deleteChat(id: string) {
+  await api('DELETE', `/v1/chats/${id}`)
+  if (id === state.id) newChat()
 }
 
 function set(patch: Partial<ChatState>) {
@@ -92,14 +161,17 @@ export function reloadChat() {
   listeners.forEach((l) => l())
 }
 
+/** Starts a fresh conversation. The current one stays in the history. */
 export function newChat() {
   stop()
+  upload()
   try {
     localStorage.removeItem(key())
   } catch {
     // ignore
   }
-  set({ messages: [], decisions: {}, live: '', activity: undefined, error: undefined, pending: undefined, busy: false })
+  state = blank()
+  listeners.forEach((l) => l())
 }
 
 export function stop() {
@@ -173,6 +245,7 @@ async function run() {
   } finally {
     controller = undefined
     set({ busy: false, live: '', activity: undefined, pending: undefined })
+    upload()
   }
 }
 

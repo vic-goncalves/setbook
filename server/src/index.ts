@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { account } from './account'
 import { chat } from './chat'
+import { chats } from './chats'
 import { allowedOrigins, auth, requireAuth } from './auth'
 import type { AppBindings } from './env'
 import { HttpError, renderError } from './errors'
@@ -13,7 +14,7 @@ app.onError(renderError)
 // The web app is served from GitHub Pages, a different origin. Tokens travel in the
 // Authorization header, never cookies, so credentials stay off.
 app.use('/v1/*', async (c, next) =>
-  cors({ origin: allowedOrigins(c.env), allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PATCH', 'DELETE'], maxAge: 86400 })(c, next),
+  cors({ origin: allowedOrigins(c.env), allowHeaders: ['authorization', 'content-type'], allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], maxAge: 86400 })(c, next),
 )
 app.use('/v1/*', async (c, next) => {
   await next()
@@ -28,6 +29,7 @@ app.use('/v1/*', requireAuth)
 app.route('/v1', account)
 app.route('/v1/sync', sync)
 app.route('/v1/chat', chat)
+app.route('/v1/chats', chats)
 
 app.all('/v1/*', () => {
   throw new HttpError(404, 'not_found', 'Not found.')

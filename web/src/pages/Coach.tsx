@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { decide, isContextBlock, newChat, retry, send, stop, useChat, type Block, type Message } from '../chat/conversation'
+import { decide, deleteChat, isContextBlock, listChats, newChat, openChat, retry, send, stop, useChat, type Block, type ChatSummary, type Message } from '../chat/conversation'
 import { Markdown } from '../chat/markdown'
 import { toolActivity } from '../chat/tools'
+import { relativeDay } from '../format'
 import { useStore, type Snapshot } from '../store'
-import { PageHeader } from '../ui/components'
+import { PageHeader, Sheet } from '../ui/components'
 import { Icon } from '../ui/icons'
 
 const WRITE_TOOLS = new Set(['save_template', 'delete_template', 'create_exercise'])
@@ -43,6 +44,7 @@ export function Coach() {
   const chat = useChat()
   const data = useStore()
   const [draft, setDraft] = useState('')
+  const [showHistory, setShowHistory] = useState(false)
   const input = useRef<HTMLTextAreaElement>(null)
   const end = useRef<HTMLDivElement>(null)
   const empty = chat.messages.length === 0 && !chat.busy
@@ -105,26 +107,32 @@ export function Coach() {
       <PageHeader
         account
         title="Coach"
-        action={!empty && (
-          <button className="icon-button coach-new" onClick={newChat} disabled={chat.busy} aria-label="New chat">
-            <Icon name="compose" size={21} />
-          </button>
-        )}
+        action={
+          <div className="coach-actions">
+            <button className="icon-button" onClick={() => setShowHistory(true)} disabled={chat.busy} aria-label="Chat history">
+              <Icon name="history" size={21} />
+            </button>
+            {!empty && (
+              <button className="icon-button" onClick={newChat} disabled={chat.busy} aria-label="New chat">
+                <Icon name="compose" size={21} />
+              </button>
+            )}
+          </div>
+        }
       />
 
       {empty ? (
         <div className="coach-empty">
           <div className="coach-hero">
-            <span className="coach-hero-mark"><Icon name="sparkle" size={26} stroke={1.8} /></span>
+            <span className="coach-hero-mark"><Icon name="sparkle" size={24} stroke={1.8} /></span>
             <h2>What are we working on?</h2>
-            <p>Answers come from your own workouts. Changes to your data always wait for your OK.</p>
+            <p>Answers come from your workouts. Changes wait for your OK.</p>
           </div>
           <div className="coach-ideas" role="list" aria-label="Suggestions">
             {ideas.map((s) => (
               <button key={s.text} role="listitem" className="coach-idea" onClick={() => submit(s.text)}>
-                <span className="coach-idea-icon"><Icon name={s.icon} size={17} /></span>
-                <span className="spacer">{s.text}</span>
-                <span className="coach-idea-go"><Icon name="up" size={15} stroke={2.2} /></span>
+                <span className="coach-idea-icon"><Icon name={s.icon} size={16} /></span>
+                <span className="coach-idea-text">{s.text}</span>
               </button>
             ))}
           </div>
@@ -159,6 +167,8 @@ export function Coach() {
           <div ref={end} />
         </div>
       )}
+
+      {showHistory && <History currentId={chat.id} onClose={() => setShowHistory(false)} />}
 
       <form className="coach-composer" onSubmit={(e) => { e.preventDefault(); submit() }}>
         <div className="coach-field">
@@ -262,4 +272,53 @@ function AssistantBlock({ block, decisions, results }: { block: Block; decisions
       {typeof templateId === 'string' && <a className="coach-outcome-link" href={`#/templates/${templateId}`}>Open<Icon name="chevron" size={14} /></a>}
     </div>
   )
+}
+
+/** Saved conversations, newest first: open one to read or continue it. */
+function History({ currentId, onClose }: { currentId: string; onClose: () => void }) {
+  const [chats, setChats] = useState<ChatSummary[]>()
+  const [error, setError] = useState<string>()
+  const load = () => listChats().then(setChats, (e: Error) => setError(e.message))
+  useEffect(() => {
+    void load()
+  }, [])
+  const open = async (id: string) => {
+    try {
+      if (id !== currentId) await openChat(id)
+      onClose()
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+  const remove = async (id: string) => {
+    setChats((list) => list?.filter((c) => c.id !== id))
+    await deleteChat(id).catch((e: Error) => {
+      setError(e.message)
+      void load()
+    })
+  }
+  return (
+    <Sheet title="Chats" onClose={onClose} actions={<button className="bar-button strong" onClick={() => { newChat(); onClose() }}>New</button>}>
+      {error && <div className="banner warn" role="alert">{error}</div>}
+      {!chats && !error && <div className="spinner" style={{ margin: '40px auto' }} />}
+      {chats?.length === 0 && <p className="subtle" style={{ textAlign: 'center', padding: '32px 0' }}>Your chats will show up here.</p>}
+      {chats && chats.length > 0 && (
+        <div className="coach-history">
+          {chats.map((c) => (
+            <div key={c.id} className={`coach-history-row${c.id === currentId ? ' current' : ''}`}>
+              <button className="spacer coach-history-open" onClick={() => void open(c.id)}>
+                <span className="coach-history-title">{c.title}</span>
+                <span className="coach-history-date">{c.id === currentId ? 'Open now' : capitalize(relativeDay(c.updatedAt))}</span>
+              </button>
+              <button className="icon-button" onClick={() => void remove(c.id)} aria-label={`Delete "${c.title}"`}><Icon name="trash" size={18} /></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Sheet>
+  )
+}
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }

@@ -35,7 +35,7 @@ account.patch('/me', async (c) => {
 account.delete('/me', async (c) => {
   const userId = c.get('auth').userId
   await c.env.DB.batch(
-    ['records', 'changes', 'mutations', 'auth_sessions', 'auth_identities', 'login_codes'].map((table) =>
+    ['records', 'changes', 'mutations', 'chats', 'auth_sessions', 'auth_identities', 'login_codes'].map((table) =>
       c.env.DB.prepare(`DELETE FROM ${table} WHERE user_id = ?`).bind(userId),
     ).concat(c.env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId)),
   )
