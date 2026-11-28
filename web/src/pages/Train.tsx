@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { muscleNames } from '../domain/catalog'
-import { completedSetCount, duplicateTemplate, emptySession, estimatedMinutes, incompleteSetCount, startFromTemplate, upNext } from '../domain/workout'
-import type { Exercise, WorkoutTemplate } from '../domain/types'
+import { completedSetCount, duplicateTemplate, emptySession, estimatedMinutes, incompleteSetCount, startFromTemplate, workingSetCount } from '../domain/workout'
+import type { Exercise, WorkoutSession, WorkoutTemplate } from '../domain/types'
+import { localDay } from '../domain/metrics'
+import { localTimeZone } from '../domain/types'
 import { tap } from '../device'
 import { relativeDay, stopwatch } from '../format'
 import { navigate } from '../router'
@@ -32,10 +34,8 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
   const [menu, setMenu] = useState<WorkoutTemplate>()
   const [deleting, setDeleting] = useState<WorkoutTemplate>()
   const active = data.sessions.find((s) => s.state === 'active')
-  const next = active ? undefined : upNext(data.templates, data.sessions)
 
   const lastDone = (id: string) => data.sessions.find((s) => s.state === 'completed' && s.sourceTemplate?.templateId === id)?.startedAt
-  const meta = (t: WorkoutTemplate) => `${plural(t.exercises.length, 'exercise')} · ${plural(workingSets(t), 'set')} · ~${estimatedMinutes(t)} min`
 
   const start = (template?: WorkoutTemplate) => {
     if (active) return onToast('Finish or discard your current workout first.')
@@ -62,15 +62,7 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
         </button>
       )}
 
-      {next && (
-        <div className="train-hero">
-          <span className="train-hero-label">Up next</span>
-          <a className="train-hero-name" href={`#/templates/${next.id}`}>{next.name}</a>
-          <div className="train-hero-meta">{musclesOf(next, data.exerciseById)}</div>
-          <div className="train-hero-meta">{meta(next)}</div>
-          <button className="btn btn-primary train-hero-button" onClick={() => start(next)}><Icon name="play" size={14} /> Start {next.name}</button>
-        </div>
-      )}
+      <WeekStrip sessions={data.sessions} />
 
       <section className="section">
         <div className="train-list-head">
@@ -135,5 +127,33 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
         />
       )}
     </>
+  )
+}
+
+/** This week, Monday to Sunday: a dot on each day trained, today outlined. Facts, not advice. */
+function WeekStrip({ sessions }: { sessions: WorkoutSession[] }) {
+  const zone = localTimeZone()
+  const today = localDay(new Date().toISOString(), zone)
+  const noon = (d: string) => new Date(`${d}T12:00:00Z`)
+  const monday = new Date(noon(today).getTime() - ((noon(today).getUTCDay() + 6) % 7) * 86_400_000)
+  const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86_400_000).toISOString().slice(0, 10))
+  const done = sessions.filter((s) => s.state === 'completed' && days.includes(localDay(s.startedAt, zone)))
+  const trained = new Set(done.map((s) => localDay(s.startedAt, zone)))
+  const sets = done.reduce((n, s) => n + workingSetCount(s), 0)
+  return (
+    <a className="week" href="#/history" aria-label={`This week: ${plural(done.length, 'workout')}, ${plural(sets, 'set')}`}>
+      <div className="week-head">
+        <span className="week-title">This week</span>
+        <span className="week-sum">{done.length ? `${plural(done.length, 'workout')} · ${plural(sets, 'set')}` : 'No workouts yet'}</span>
+      </div>
+      <div className="week-days">
+        {days.map((d) => (
+          <div key={d} className={`week-day${d === today ? ' today' : ''}${d > today ? ' later' : ''}`}>
+            <span className="week-letter">{noon(d).toLocaleDateString('en-US', { weekday: 'narrow', timeZone: 'UTC' })}</span>
+            <span className={`week-dot${trained.has(d) ? ' on' : ''}`}>{trained.has(d) ? <Icon name="check" size={13} stroke={3} /> : noon(d).getUTCDate()}</span>
+          </div>
+        ))}
+      </div>
+    </a>
   )
 }
