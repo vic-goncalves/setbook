@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { DEFAULT_CHAT_MODEL, setChatFetchForTesting } from '../src/chat'
-import { chatTools } from '../src/chat-prompt'
+import { MAX_STRICT_UNIONS, chatTools } from '../src/chat-prompt'
 import { call, devLogin, json } from './helpers'
 
 // Ignore a local .dev.vars pointing at a stand-in API.
@@ -76,6 +76,19 @@ describe('chat', () => {
     expect(sent!.body.tools.map((t: { name: string }) => t.name)).toEqual(chatTools.map((t) => t.name))
     expect(sent!.body.system).toContain('Setbook')
     expect(sent!.body.messages).toEqual([{ role: 'user', content: 'hi' }])
+  })
+
+  it('stays within the API limit on nullable parameters in strict tools', () => {
+    // The API rejects strict schemas with more than 16 union-typed parameters in total.
+    const count = (schema: unknown): number => {
+      if (!schema || typeof schema !== 'object') return 0
+      const node = schema as Record<string, unknown>
+      const here = Array.isArray(node.anyOf) || Array.isArray(node.type) ? 1 : 0
+      return here + Object.values(node).reduce<number>((n, v) => n + (Array.isArray(v) ? v.reduce<number>((m, x) => m + count(x), 0) : count(v)), 0)
+    }
+    const unions = chatTools.filter((t) => t.strict).reduce((n, t) => n + count(t.input_schema), 0)
+    expect(unions).toBeGreaterThan(0)
+    expect(unions).toBeLessThanOrEqual(MAX_STRICT_UNIONS)
   })
 
   it('reports Anthropic errors as an error line', async () => {

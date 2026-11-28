@@ -34,57 +34,72 @@ export const chatSystemPrompt = `You are the coach inside Setbook, a strength-tr
 
 Once you've answered something, treat that answer as done. On later turns, focus on what they're asking now, unless they ask about an earlier answer or point out a problem with it.`
 
+/**
+ * Strict schemas (guaranteed-valid input) are worth it for the tools that change data. The
+ * API caps strict schemas at 16 nullable parameters in total, so read-only tools use plain
+ * optional parameters instead; the browser validates their input anyway.
+ */
+export const MAX_STRICT_UNIONS = 16
+
 const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: 'null' }] })
-const dateField = (what: string) => ({ ...nullable({ type: 'string' }), description: `${what} as YYYY-MM-DD in the user's time zone, or null.` })
-const object = (properties: Record<string, unknown>) => ({
+const dateField = (what: string) => ({ type: 'string', description: `${what} as YYYY-MM-DD in the user's time zone. Omit for no limit.` })
+const object = (properties: Record<string, unknown>, required = Object.keys(properties)) => ({
   type: 'object' as const,
   properties,
-  required: Object.keys(properties),
+  required,
   additionalProperties: false,
 })
 
-const tool = (name: string, description: string, properties: Record<string, unknown> = {}): Anthropic.Beta.BetaTool => ({
+/** A tool that changes data: strict, every field required (nullable where optional). */
+const writeTool = (name: string, description: string, properties: Record<string, unknown>): Anthropic.Beta.BetaTool => ({
   name,
   description,
   input_schema: object(properties),
   strict: true,
 })
 
+/** A read-only tool: listed parameters are required, the rest optional. */
+const readTool = (name: string, description: string, properties: Record<string, unknown> = {}, required: string[] = []): Anthropic.Beta.BetaTool => ({
+  name,
+  description,
+  input_schema: object(properties, required),
+})
+
 export const chatTools: Anthropic.Beta.BetaTool[] = [
-  tool(
+  readTool(
     'get_overview',
     'A summary of the account: today, weight unit, how many workouts are logged and the date range, every template (id, name, exercise count), the 10 most recent workouts, custom exercises, and the latest body weight. Call this first when you need context.',
   ),
-  tool('find_exercises', 'Search the built-in catalog and the user\'s custom exercises. Returns id, name, muscles, equipment, measurement and how many workouts they appear in. Up to 40 results, most-logged first.', {
-    query: { ...nullable({ type: 'string' }), description: 'Words to match in the name, or null for all.' },
-    muscle: { ...nullable({ type: 'string', enum: [...muscleGroups] }), description: 'Only exercises with this primary muscle, or null.' },
+  readTool('find_exercises', 'Search the built-in catalog and the user\'s custom exercises. Returns id, name, muscles, equipment, measurement and how many workouts they appear in. Up to 40 results, most-logged first.', {
+    query: { type: 'string', description: 'Words to match in the name. Omit for all.' },
+    muscle: { type: 'string', enum: [...muscleGroups], description: 'Only exercises with this primary muscle.' },
     logged_only: { type: 'boolean', description: 'true to return only exercises that appear in at least one completed workout.' },
   }),
-  tool('get_template', 'One template in full: each exercise with its name, rest, notes and target sets.', {
+  readTool('get_template', 'One template in full: each exercise with its name, rest, notes and target sets.', {
     template_id: { type: 'string' },
-  }),
-  tool('list_workouts', 'Completed workouts, newest first: id, name, date, duration, and per exercise the completed working sets as "weight x reps".', {
+  }, ['template_id']),
+  readTool('list_workouts', 'Completed workouts, newest first: id, name, date, duration, and per exercise the completed working sets as "weight x reps".', {
     from: dateField('Earliest day'),
     to: dateField('Latest day'),
-    limit: { ...nullable({ type: 'integer' }), description: 'At most this many workouts (default 20, max 100).' },
+    limit: { type: 'integer', description: 'At most this many workouts (default 20, max 100).' },
   }),
-  tool('get_workout', 'One workout in full, every set including warm-ups and incomplete sets, with RIR and notes.', {
+  readTool('get_workout', 'One workout in full, every set including warm-ups and incomplete sets, with RIR and notes.', {
     workout_id: { type: 'string' },
-  }),
-  tool('exercise_progress', 'History of one exercise, one point per workout, oldest first: top set, estimated 1RM, working sets, reps and volume; plus personal records. Use for "how is my X progressing" questions.', {
+  }, ['workout_id']),
+  readTool('exercise_progress', 'History of one exercise, one point per workout, oldest first: top set, estimated 1RM, working sets, reps and volume; plus personal records. Use for "how is my X progressing" questions.', {
     exercise_id: { type: 'string' },
     from: dateField('Earliest day'),
     to: dateField('Latest day'),
-  }),
-  tool('training_volume', 'Completed working sets per week, grouped by primary muscle (and by exercise within each muscle). Use for balance and weekly-volume questions.', {
+  }, ['exercise_id']),
+  readTool('training_volume', 'Completed working sets per week, grouped by primary muscle (and by exercise within each muscle). Use for balance and weekly-volume questions.', {
     from: dateField('Earliest day (default 8 weeks ago)'),
     to: dateField('Latest day (default today)'),
   }),
-  tool('body_weight', 'Body-weight entries as daily averages with a 7-day rolling average.', {
+  readTool('body_weight', 'Body-weight entries as daily averages with a 7-day rolling average.', {
     from: dateField('Earliest day'),
     to: dateField('Latest day'),
   }),
-  tool(
+  writeTool(
     'save_template',
     'Create a template, or replace an existing one completely. The user approves it first. Weights are in the user\'s unit.',
     {
@@ -110,10 +125,10 @@ export const chatTools: Anthropic.Beta.BetaTool[] = [
       },
     },
   ),
-  tool('delete_template', 'Delete a template. Past workouts are kept. The user approves it first.', {
+  writeTool('delete_template', 'Delete a template. Past workouts are kept. The user approves it first.', {
     template_id: { type: 'string' },
   }),
-  tool('create_exercise', 'Add a custom exercise when nothing in the catalog fits. The user approves it first.', {
+  writeTool('create_exercise', 'Add a custom exercise when nothing in the catalog fits. The user approves it first.', {
     name: { type: 'string' },
     primary_muscle: { type: 'string', enum: [...muscleGroups] },
     secondary_muscles: { type: 'array', items: { type: 'string', enum: [...muscleGroups] } },
