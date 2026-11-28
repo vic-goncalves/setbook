@@ -400,3 +400,5 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
   border-radius: 14px; background: #2c2c31; border: 0.5px solid #3a3a40; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 15px; animation: pop 0.2s var(--ease);
 }
 .coach-undo-button { font-weight: 600; color: var(--done); padding: 6px 8px; font-size: 15px; }
+
+.coach-long { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 14px; background: var(--surface); border: 0.5px solid var(--hairline); font-size: 14px; line-height: 1.35; color: var(--ink-2); }

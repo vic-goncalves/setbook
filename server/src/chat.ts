@@ -18,9 +18,11 @@ import { chatSystemPrompt, chatTools } from './chat-prompt'
  */
 
 export const DEFAULT_CHAT_MODEL = 'claude-haiku-5-5'
-const MAX_TOKENS = 16000
+// Bounds the worst case per call; low effort keeps real replies far below it.
+const MAX_TOKENS = 8000
 const MAX_MESSAGES = 200
-const MAX_BODY_BYTES = 600_000
+// Haiku 5.5 prices prompts over 100K tokens at 5x. Well below that, the app starts a new chat.
+const MAX_BODY_BYTES = 280_000
 
 // Roles only; content is checked by the API. `system` can't be smuggled in from the browser.
 const requestSchema = z.object({
@@ -68,7 +70,9 @@ chat.post('/', async (c) => {
     // Keep thinking blocks that no longer match (e.g. after a system prompt change in a
     // deploy) from failing old conversations: they're dropped instead.
     thinking: { type: 'adaptive', block_binding: { prefix_mismatch_behavior: 'drop_block' } },
-    output_config: { effort: 'medium' },
+    // Lowest thinking level: thinking is billed as output, and the context the app sends
+    // usually has the answer already.
+    output_config: { effort: 'low' },
     // Caches the system prompt, tools and history so far; each turn re-reads it cheaply.
     cache_control: { type: 'ephemeral' },
     system: chatSystemPrompt,

@@ -74,6 +74,9 @@ describe('chat', () => {
     expect(sent!.body.model).toBe(DEFAULT_CHAT_MODEL)
     expect(sent!.body.stream).toBe(true)
     expect(sent!.body.fallbacks).toBeUndefined()
+    // Cost: lowest thinking level and a bounded reply.
+    expect(sent!.body.output_config).toEqual({ effort: 'low' })
+    expect(sent!.body.max_tokens).toBe(8000)
     expect(sent!.body.tools.map((t: { name: string }) => t.name)).toEqual(chatTools.map((t) => t.name))
     expect(sent!.body.system).toContain('Setbook')
     expect(sent!.body.messages).toEqual([{ role: 'user', content: 'hi' }])

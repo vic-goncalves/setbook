@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { ApiError, api, apiStream, currentUser } from '../api'
 import { localTimeZone, newId } from '../domain/types'
 import { currentPrefs } from '../prefs'
-import { runTool, serialize, toolActivity, type Proposal } from './tools'
+import { runTool, serialize, toolActivity, trainingSnapshot, type Proposal } from './tools'
 
 /**
  * The coach conversation. The browser owns the history and sends all of it each turn; the
@@ -41,7 +41,11 @@ export interface ChatState {
   decisions: Record<string, 'approved' | 'declined' | 'failed'>
 }
 
-const MAX_ROUNDS = 15
+const MAX_ROUNDS = 8
+/** Past this, a chat is noticeably more expensive per message: suggest a new one. */
+export const LONG_CHAT_CHARS = 120_000
+/** The server refuses requests near this size (prompts over 100K tokens cost 5x). */
+const MAX_CHAT_CHARS = 260_000
 const STORAGE_PREFIX = 'setbook.chat.'
 
 const listeners = new Set<() => void>()
@@ -185,10 +189,14 @@ export function decide(ok: boolean) {
   approve?.(ok)
 }
 
+/** The first message carries a snapshot of their training, so most answers need no tools. */
 function context(): string {
-  const now = new Date()
-  const date = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  return `<context>\nToday: ${date}\nTime zone: ${localTimeZone()}\nWeight unit: ${currentPrefs().unit}\n</context>`
+  return `<context>\n${trainingSnapshot()}\n</context>`
+}
+
+/** Characters this chat sends per message: a rough measure of what each reply costs. */
+export function chatSize(messages: Message[] = state.messages): number {
+  return JSON.stringify(messages).length
 }
 
 export function isContextBlock(block: Block) {
@@ -206,6 +214,10 @@ export async function send(text: string) {
     for (const b of last.content.filter((b) => b.type === 'tool_use')) {
       content.push({ type: 'tool_result', tool_use_id: b.id, content: 'Not run: the user stopped this before it finished.', is_error: true })
     }
+  }
+  if (chatSize() > MAX_CHAT_CHARS) {
+    set({ error: 'This chat is too long to continue. Start a new chat to keep replies fast and cheap.' })
+    return
   }
   if (state.messages.length === 0) content.push({ type: 'text', text: context() })
   content.push({ type: 'text', text: trimmed })

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { decide, deleteChat, isContextBlock, listChats, newChat, openChat, retry, send, stop, useChat, type Block, type ChatSummary, type Message } from '../chat/conversation'
+import { LONG_CHAT_CHARS, chatSize, decide, deleteChat, isContextBlock, listChats, newChat, openChat, retry, send, stop, useChat, type Block, type ChatSummary, type Message } from '../chat/conversation'
 import { Markdown } from '../chat/markdown'
 import { toolActivity } from '../chat/tools'
 import { useStore, type Snapshot } from '../store'
@@ -12,6 +12,8 @@ const WRITE_TOOLS = new Set(['save_template', 'delete_template', 'create_exercis
 
 /** Past-tense labels for finished steps. */
 const toolDone: Record<string, string> = {
+  workouts: 'Looked at your workouts',
+  // Earlier tool names, for older chats.
   get_overview: 'Looked at your account',
   find_exercises: 'Searched exercises',
   get_template: 'Read a template',
@@ -159,10 +161,18 @@ export function Coach() {
           {chat.activity && !chat.pending && !chat.live && (
             <div className="coach-activity"><span className="coach-dots" aria-hidden="true"><i /><i /><i /></span><span className="coach-shimmer">{chat.activity}</span></div>
           )}
+          {!chat.busy && !chat.error && chatSize(chat.messages) > LONG_CHAT_CHARS && (
+            <div className="coach-long" role="status">
+              <span className="spacer">This chat is getting long, so each reply costs more. A new chat is cheaper.</span>
+              <button className="btn coach-retry" onClick={newChat}><Icon name="compose" size={15} />New chat</button>
+            </div>
+          )}
           {chat.error && (
             <div className="coach-error" role="alert">
               <span className="spacer">{chat.error}</span>
-              {!chat.busy && <button className="btn coach-retry" onClick={() => void retry()}><Icon name="repeat" size={15} />Retry</button>}
+              {!chat.busy && (chat.error.startsWith('This chat is too long')
+                ? <button className="btn coach-retry" onClick={newChat}><Icon name="compose" size={15} />New chat</button>
+                : <button className="btn coach-retry" onClick={() => void retry()}><Icon name="repeat" size={15} />Retry</button>)}
             </div>
           )}
           <div ref={end} />
