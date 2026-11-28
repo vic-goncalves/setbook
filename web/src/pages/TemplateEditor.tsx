@@ -92,6 +92,9 @@ function TemplateExerciseBlock({ exercise, index, count, name, measurement, unit
 }) {
   const [menu, setMenu] = useState(false)
   const [addingNote, setAddingNote] = useState(false)
+  // Most exercises are "N sets of the same target": edit that as one card. Mixed sets (or a
+  // tap on "Edit sets one by one") show every set.
+  const [detailed, setDetailed] = useState(() => !isUniform(exercise))
   const hasLoad = tracksLoad(measurement)
   const columns = hasLoad ? '40px 1fr 1fr 96px' : '40px 1fr 1fr'
   return (
@@ -109,6 +112,14 @@ function TemplateExerciseBlock({ exercise, index, count, name, measurement, unit
         <input className="bare small subtle" style={{ marginTop: 6 }} placeholder="Note" value={exercise.notes ?? ''} autoFocus={addingNote}
           onBlur={() => setAddingNote(false)} onChange={(e) => onChange(strip({ ...exercise, notes: e.target.value || undefined }))} aria-label={`Note for ${name}`} />
       )}
+      {!detailed ? (
+        <>
+          <SimpleSets exercise={exercise} hasLoad={hasLoad} loadName={loadLabel(measurement) ?? 'Weight'} unit={unit} onChange={onChange}
+            onValidity={(valid) => onValidity(exercise.id, valid)} />
+          <button className="tpl-detail-link" onClick={() => setDetailed(true)}>Edit sets one by one</button>
+        </>
+      ) : (
+      <>
       <div className="set-grid set-head" style={{ gridTemplateColumns: columns, marginTop: 10, paddingLeft: 0, paddingRight: 0 }}>
         <span style={{ textAlign: 'center' }}>Set</span><span style={{ textAlign: 'center' }}>Min reps</span><span style={{ textAlign: 'center' }}>Max reps</span>
         {hasLoad && <span style={{ textAlign: 'center' }}>{loadLabel(measurement)} ({unit})</span>}
@@ -129,6 +140,8 @@ function TemplateExerciseBlock({ exercise, index, count, name, measurement, unit
         }}>
         <Icon name="plus" size={16} /> Add set
       </button>
+      </>
+      )}
       {menu && (
         <ActionSheet title={name} onClose={() => setMenu(false)} actions={[
           ...(exercise.notes === undefined ? [{ label: 'Add note', run: () => setAddingNote(true) }] : []),
@@ -177,6 +190,88 @@ function TemplateSetRow({ set, label, hasLoad, unit, columns, onChange }: {
         <input className="field num" inputMode="decimal" placeholder="-" value={loadText} aria-label={`Target load in ${unit}, optional`}
           onChange={(e) => { setLoad(e.target.value); commit(minText, maxText, e.target.value) }} />
       )}
+    </div>
+  )
+}
+
+/** Every working set has the same target, and warm-ups have none. */
+function isUniform(exercise: TemplateExercise): boolean {
+  const working = exercise.sets.filter((s) => s.type === 'working')
+  const warmups = exercise.sets.filter((s) => s.type === 'warmup')
+  const firstWarmup = exercise.sets.findIndex((s) => s.type === 'warmup')
+  const lastWarmup = exercise.sets.map((s) => s.type).lastIndexOf('warmup')
+  if (warmups.length && (firstWarmup !== 0 || lastWarmup !== warmups.length - 1)) return false // warm-ups first
+  if (warmups.some((s) => s.targetReps || s.targetLoad)) return false
+  const key = (s: TemplateSet) => JSON.stringify([s.targetReps ?? null, s.targetLoad ?? null])
+  return working.length > 0 && working.every((s) => key(s) === key(working[0]!))
+}
+
+function Stepper({ value, min, max, label, onChange }: { value: number; min: number; max: number; label: string; onChange: (v: number) => void }) {
+  return (
+    <div className="tpl-stepper" role="group" aria-label={label}>
+      <button onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={`Fewer ${label.toLowerCase()}`}>−</button>
+      <span className="num" aria-live="polite">{value}</span>
+      <button onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={`More ${label.toLowerCase()}`}>+</button>
+    </div>
+  )
+}
+
+/** One card for "N sets of reps at weight, after W warm-ups". Rebuilds the sets, keeping ids. */
+function SimpleSets({ exercise, hasLoad, loadName, unit, onChange, onValidity }: {
+  exercise: TemplateExercise; hasLoad: boolean; loadName: string; unit: 'kg' | 'lb'; onChange: (e: TemplateExercise) => void; onValidity: (valid: boolean) => void
+}) {
+  const working = exercise.sets.filter((s) => s.type === 'working')
+  const warmups = exercise.sets.filter((s) => s.type === 'warmup')
+  const first = working[0]
+  const [minText, setMin] = useState(first?.targetReps ? String(first.targetReps.min) : '')
+  const [maxText, setMax] = useState(first?.targetReps && first.targetReps.max !== first.targetReps.min ? String(first.targetReps.max) : '')
+  const [loadText, setLoad] = useState(first?.targetLoad ? mass(first.targetLoad, unit, false) : '')
+
+  const rebuild = (count: number, warm: number, min: string, max: string, load: string) => {
+    const lo = parseInteger(min)
+    const hi = max ? parseInteger(max) : lo
+    const repsValid = (!min && !max) || (lo !== undefined && hi !== undefined && lo >= 1 && hi >= lo)
+    const loadValue = parseDecimal(load)
+    const loadValid = !load || (loadValue !== undefined && loadValue >= 0)
+    const keepLoad = first?.targetLoad && load === mass(first.targetLoad, unit, false)
+    const targetReps = repsValid && lo !== undefined && hi !== undefined ? { min: lo, max: hi } : undefined
+    const targetLoad = hasLoad ? (keepLoad ? first?.targetLoad : loadValid && loadValue !== undefined ? { value: loadValue, unit } : undefined) : undefined
+    const sets: TemplateSet[] = [
+      ...Array.from({ length: warm }, (_, i): TemplateSet => ({ id: warmups[i]?.id ?? newId(), type: 'warmup' })),
+      ...Array.from({ length: count }, (_, i): TemplateSet => strip({ id: working[i]?.id ?? newId(), type: 'working' as const, targetReps, targetLoad })),
+    ]
+    onChange({ ...exercise, sets })
+    onValidity(repsValid && loadValid)
+  }
+  const invalidReps = !!(minText || maxText) && !(parseInteger(minText) && (!maxText || (parseInteger(maxText) ?? 0) >= (parseInteger(minText) ?? 0)))
+
+  return (
+    <div className="tpl-simple">
+      <div className="tpl-cell">
+        <span className="tpl-label">Sets</span>
+        <Stepper label="Sets" value={working.length} min={1} max={20} onChange={(n) => rebuild(n, warmups.length, minText, maxText, loadText)} />
+      </div>
+      <div className="tpl-cell">
+        <span className="tpl-label">Reps</span>
+        <div className="tpl-range">
+          <input className={`field num${invalidReps ? ' invalid' : ''}`} inputMode="numeric" placeholder="8" value={minText} aria-label="Minimum reps"
+            onChange={(e) => { setMin(e.target.value); rebuild(working.length, warmups.length, e.target.value, maxText, loadText) }} />
+          <span className="faint">–</span>
+          <input className={`field num${invalidReps ? ' invalid' : ''}`} inputMode="numeric" placeholder="max" value={maxText} aria-label="Maximum reps, optional"
+            onChange={(e) => { setMax(e.target.value); rebuild(working.length, warmups.length, minText, e.target.value, loadText) }} />
+        </div>
+      </div>
+      {hasLoad && (
+        <div className="tpl-cell">
+          <span className="tpl-label">{loadName} ({unit})</span>
+          <input className="field num tpl-load" inputMode="decimal" placeholder="Optional" value={loadText} aria-label={`Target ${loadName.toLowerCase()} in ${unit}, optional`}
+            onChange={(e) => { setLoad(e.target.value); rebuild(working.length, warmups.length, minText, maxText, e.target.value) }} />
+        </div>
+      )}
+      <div className="tpl-cell">
+        <span className="tpl-label">Warm-ups</span>
+        <Stepper label="Warm-up sets" value={warmups.length} min={0} max={10} onChange={(n) => rebuild(working.length, n, minText, maxText, loadText)} />
+      </div>
     </div>
   )
 }

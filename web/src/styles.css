@@ -410,3 +410,52 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .coach-undo-button { font-weight: 600; color: var(--done); padding: 6px 8px; font-size: 15px; }
 
 .coach-long { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; border-radius: 14px; background: var(--surface); border: 0.5px solid var(--hairline); font-size: 14px; line-height: 1.35; color: var(--ink-2); }
+
+/* Train tab: what's next in one tap, then every template as a compact row. */
+.train-hero {
+  display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-top: 12px; padding: 18px 18px 16px; text-align: left;
+  border-radius: 22px; background: linear-gradient(160deg, #1f1f23, #141416); border: 0.5px solid #34343a;
+}
+.train-hero.resume { border-color: rgba(76, 195, 138, 0.4); background: linear-gradient(160deg, rgba(76, 195, 138, 0.1), #141416 60%); }
+.train-hero-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.train-hero-name { display: block; margin-top: 4px; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; color: var(--ink); }
+.train-hero-meta { margin-top: 4px; font-size: 15px; color: var(--ink-2); line-height: 1.35; }
+.train-hero-meta + .train-hero-meta { margin-top: 2px; color: var(--ink-3); font-size: 14px; }
+.train-hero-button { margin-top: 16px; min-height: 52px; gap: 8px; }
+
+.train-list-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
+.train-list-head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.train-new { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; background: var(--raised); color: var(--ink); }
+.train-list { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; overflow: hidden; }
+.train-row { display: flex; align-items: center; gap: 4px; padding: 0 12px 0 16px; min-height: 76px; }
+.train-row + .train-row { border-top: 0.5px solid var(--hairline); }
+.train-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 0; }
+.train-row-main:active { opacity: 0.6; }
+.train-row-name { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.train-row-meta { font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.train-row-meta.faint { font-size: 13px; color: var(--ink-3); }
+.train-row-more { color: var(--ink-3); min-width: 36px; }
+.train-play {
+  flex: none; width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--ink); color: var(--bg); transition: transform 0.12s var(--ease);
+}
+.train-play:active { transform: scale(0.92); }
+.train-play svg { margin-left: 2px; }
+.train-quiet { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 12px; color: var(--ink-2); font-weight: 600; font-size: 15px; }
+.train-empty { display: flex; flex-direction: column; padding: 20px; border-radius: 18px; background: var(--surface); border: 0.5px solid var(--hairline); }
+.train-empty strong { font-size: 17px; }
+.train-empty span { margin-top: 6px; color: var(--ink-2); font-size: 15px; line-height: 1.4; }
+
+/* Template editor: one card per exercise for the usual "N sets of the same target". */
+.tpl-simple { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 10px; border-radius: 16px; overflow: hidden; background: var(--hairline); border: 0.5px solid var(--hairline); }
+.tpl-cell { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px 14px; background: var(--surface); min-width: 0; }
+.tpl-label { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.tpl-stepper { display: flex; align-items: center; justify-content: space-between; height: 44px; border-radius: 12px; background: var(--field); padding: 0 4px; }
+.tpl-stepper button { width: 40px; height: 40px; border-radius: 10px; font-size: 22px; line-height: 1; color: var(--ink); }
+.tpl-stepper button:active:not(:disabled) { background: #34343a; }
+.tpl-stepper button:disabled { opacity: 1; color: var(--ink-3); }
+.tpl-stepper span { font-size: 19px; font-weight: 600; }
+.tpl-range { display: flex; align-items: center; gap: 6px; }
+.tpl-range .field { flex: 1; min-width: 0; height: 44px; text-align: center; }
+.tpl-load { height: 44px; width: 100%; text-align: center; }
+.tpl-detail-link { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--ink-3); padding: 4px 0; }

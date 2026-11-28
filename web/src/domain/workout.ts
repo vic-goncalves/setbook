@@ -190,3 +190,31 @@ function sameTarget(a?: RepTarget, b?: RepTarget) {
 export function strip<T extends object>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as T
 }
+
+/** Rough length: each set ~40 s of work plus its rest, and a minute to set up each exercise. */
+export function estimatedMinutes(t: WorkoutTemplate): number {
+  let seconds = 0
+  for (const e of t.exercises) {
+    const rest = e.restSeconds ?? 90
+    seconds += 60 + e.sets.length * 40 + Math.max(0, e.sets.length - 1) * rest
+  }
+  return Math.max(5, Math.round(seconds / 60 / 5) * 5)
+}
+
+/**
+ * The next day of their rotation. Numbered templates ("1 · Push", "2 · Pull") follow their
+ * numbers; otherwise the list order. After the last one it wraps around.
+ */
+export function upNext(templates: WorkoutTemplate[], sessions: WorkoutSession[]): WorkoutTemplate | undefined {
+  if (templates.length === 0) return undefined
+  const lastDone = sessions.find((s) => s.state === 'completed' && templates.some((t) => t.id === s.sourceTemplate?.templateId))
+  const last = lastDone && templates.find((t) => t.id === lastDone.sourceTemplate!.templateId)
+  if (!last) return templates.find((t) => /^\s*1\b/.test(t.name)) ?? templates[0]
+  const number = (t: WorkoutTemplate) => Number(t.name.match(/^\s*(\d+)\b/)?.[1] ?? NaN)
+  const n = number(last)
+  if (Number.isFinite(n)) {
+    const numbered = templates.filter((t) => Number.isFinite(number(t))).sort((a, b) => number(a) - number(b))
+    return numbered.find((t) => number(t) > n) ?? numbered[0]
+  }
+  return templates[(templates.indexOf(last) + 1) % templates.length]
+}

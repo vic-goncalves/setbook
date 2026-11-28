@@ -1,22 +1,45 @@
 import { useState } from 'react'
-import { completedSetCount, duplicateTemplate, emptySession, incompleteSetCount, startFromTemplate } from '../domain/workout'
-import type { WorkoutTemplate } from '../domain/types'
+import { muscleNames } from '../domain/catalog'
+import { completedSetCount, duplicateTemplate, emptySession, estimatedMinutes, incompleteSetCount, startFromTemplate, upNext } from '../domain/workout'
+import type { Exercise, WorkoutTemplate } from '../domain/types'
+import { tap } from '../device'
 import { relativeDay, stopwatch } from '../format'
 import { navigate } from '../router'
 import { store, useStore } from '../store'
-import { Confirm, EmptyState, PageHeader, SectionHead, useNow } from '../ui/components'
+import { ActionSheet, Confirm, PageHeader, useNow } from '../ui/components'
 import { Icon } from '../ui/icons'
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
+function workingSets(t: WorkoutTemplate) {
+  return t.exercises.reduce((n, e) => n + e.sets.filter((s) => s.type === 'working').length, 0)
+}
+
+/** "Chest, Shoulders, Triceps": primary muscles by how many sets hit them. */
+function musclesOf(t: WorkoutTemplate, byId: Map<string, Exercise>): string {
+  const sets = new Map<string, number>()
+  for (const e of t.exercises) {
+    const m = byId.get(e.exerciseId.toUpperCase())?.primaryMuscle
+    if (m) sets.set(m, (sets.get(m) ?? 0) + e.sets.length)
+  }
+  const names = [...sets.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => muscleNames[m as keyof typeof muscleNames] ?? m)
+  return names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ')
+}
 
 export function Train({ onToast }: { onToast: (m: string) => void }) {
   const data = useStore()
   const now = useNow()
+  const [menu, setMenu] = useState<WorkoutTemplate>()
   const [deleting, setDeleting] = useState<WorkoutTemplate>()
   const active = data.sessions.find((s) => s.state === 'active')
+  const next = active ? undefined : upNext(data.templates, data.sessions)
 
-  const lastPerformed = (id: string) => data.sessions.find((s) => s.state === 'completed' && s.sourceTemplate?.templateId === id)?.startedAt
+  const lastDone = (id: string) => data.sessions.find((s) => s.state === 'completed' && s.sourceTemplate?.templateId === id)?.startedAt
+  const meta = (t: WorkoutTemplate) => `${plural(t.exercises.length, 'exercise')} · ${plural(workingSets(t), 'set')} · ~${estimatedMinutes(t)} min`
 
   const start = (template?: WorkoutTemplate) => {
     if (active) return onToast('Finish or discard your current workout first.')
+    tap()
     store.save('session', template ? startFromTemplate(template, data.exerciseById) : emptySession())
     navigate('/workout')
   }
@@ -24,77 +47,81 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
   return (
     <>
       <PageHeader account title="Train" />
-      <div className="stack" style={{ marginTop: 16 }}>
-        {active ? (
-          <button className="card clickable" style={{ textAlign: 'left', borderColor: 'rgba(76,195,138,.35)' }} onClick={() => navigate('/workout')}>
-            <div className="row"><span className="dot" /><span className="eyebrow" style={{ color: 'var(--done)' }}>In progress</span></div>
-            <div className="row" style={{ marginTop: 12, alignItems: 'flex-end' }}>
-              <div className="spacer">
-                <div style={{ fontWeight: 600, fontSize: 19 }}>{active.name}</div>
-                <div className="small subtle">{completedSetCount(active)} of {completedSetCount(active) + incompleteSetCount(active)} sets done</div>
-              </div>
-              <div className="metric-big num">{stopwatch(now - Date.parse(active.startedAt))}</div>
+
+      {active && (
+        <button className="train-hero resume" onClick={() => navigate('/workout')}>
+          <div className="row"><span className="dot" /><span className="train-hero-label" style={{ color: 'var(--done)' }}>In progress</span></div>
+          <div className="row" style={{ marginTop: 10, alignItems: 'flex-end' }}>
+            <div className="spacer">
+              <div className="train-hero-name">{active.name}</div>
+              <div className="train-hero-meta">{completedSetCount(active)} of {completedSetCount(active) + incompleteSetCount(active)} sets done</div>
             </div>
-            <div className="btn btn-primary" style={{ marginTop: 14, minHeight: 48 }}>Resume workout</div>
-          </button>
-        ) : (
-          <button className="btn btn-primary" onClick={() => start()}><Icon name="plus" /> Start empty workout</button>
-        )}
-      </div>
+            <div className="metric-big num">{stopwatch(now - Date.parse(active.startedAt))}</div>
+          </div>
+          <div className="btn btn-primary train-hero-button">Resume workout</div>
+        </button>
+      )}
+
+      {next && (
+        <div className="train-hero">
+          <span className="train-hero-label">Up next</span>
+          <a className="train-hero-name" href={`#/templates/${next.id}`}>{next.name}</a>
+          <div className="train-hero-meta">{musclesOf(next, data.exerciseById)}</div>
+          <div className="train-hero-meta">{meta(next)}</div>
+          <button className="btn btn-primary train-hero-button" onClick={() => start(next)}><Icon name="play" size={14} /> Start {next.name}</button>
+        </div>
+      )}
 
       <section className="section">
-        <SectionHead title="Templates">
-          <a className="btn btn-ghost" href="#/templates/new"><Icon name="plus" size={16} /> New</a>
-        </SectionHead>
-        {data.templates.length === 0 && (
-          <div className="card">
-            <EmptyState
-              title="Save the routines you repeat"
-              message="A template like Push or Legs starts with one tap and shows what you lifted last time."
-              action={<a className="pill" href="#/templates/new">Create template</a>}
-            />
+        <div className="train-list-head">
+          <h2>Templates</h2>
+          <a className="train-new" href="#/templates/new" aria-label="New template"><Icon name="plus" size={20} stroke={2.2} /></a>
+        </div>
+        {data.templates.length === 0 ? (
+          <div className="train-empty">
+            <strong>Save the routines you repeat</strong>
+            <span>A template like Push or Legs starts with one tap and shows what you lifted last time.</span>
+            <div className="row" style={{ marginTop: 14, gap: 8 }}>
+              <a className="pill" href="#/templates/new">Create template</a>
+              <a className="pill quiet" href="#/coach"><Icon name="sparkle" size={14} /> Ask Coach</a>
+            </div>
+          </div>
+        ) : (
+          <div className="train-list">
+            {data.templates.map((t) => {
+              const last = lastDone(t.id)
+              return (
+                <div key={t.id} className="train-row">
+                  <a className="train-row-main" href={`#/templates/${t.id}`}>
+                    <span className="train-row-name">{t.name}</span>
+                    <span className="train-row-meta">{musclesOf(t, data.exerciseById) || 'No exercises yet'}</span>
+                    <span className="train-row-meta faint">{plural(workingSets(t), 'set')} · ~{estimatedMinutes(t)} min · {last ? `last ${relativeDay(last)}` : 'not done yet'}</span>
+                  </a>
+                  <button className="icon-button train-row-more" onClick={() => setMenu(t)} aria-label={`Options for ${t.name}`}><Icon name="more" size={20} stroke={3} /></button>
+                  {!active && (
+                    <button className="train-play" onClick={() => start(t)} aria-label={`Start ${t.name}`}><Icon name="play" size={14} /></button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
-        <div className="stack">
-          {data.templates.map((t) => {
-            const last = lastPerformed(t.id)
-            return (
-              <div key={t.id} className="card">
-                <div className="row" style={{ alignItems: 'flex-start' }}>
-                  <a className="spacer" href={`#/templates/${t.id}`}>
-                    <div style={{ fontWeight: 600, fontSize: 19 }}>{t.name}</div>
-                    <div className="small subtle">{t.exercises.length} exercise{t.exercises.length === 1 ? '' : 's'}, {last ? `last ${relativeDay(last)}` : 'not done yet'}</div>
-                  </a>
-                  <TemplateMenu
-                    onEdit={() => navigate(`/templates/${t.id}`)}
-                    onDuplicate={() => {
-                      store.save('template', duplicateTemplate(t))
-                      onToast(`Duplicated ${t.name}`)
-                    }}
-                    onDelete={() => setDeleting(t)}
-                  />
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  {t.exercises.slice(0, 4).map((e) => (
-                    <div key={e.id} className="row small" style={{ gap: 8, padding: '2px 0' }}>
-                      <span className="num faint" style={{ width: 16, textAlign: 'right' }}>{e.sets.length}</span>
-                      <span className="subtle">{data.exerciseById.get(e.exerciseId.toUpperCase())?.name ?? 'Exercise'}</span>
-                    </div>
-                  ))}
-                  {t.exercises.length > 4 && <div className="small faint" style={{ paddingLeft: 24 }}>+{t.exercises.length - 4} more</div>}
-                </div>
-                {/* No disabled buttons: while a workout runs, the resume card is the one action. */}
-                {!active && (
-                  <div className="row" style={{ justifyContent: 'flex-end', marginTop: 8 }}>
-                    <button className="pill" onClick={() => start(t)} aria-label={`Start ${t.name}`}><Icon name="play" size={12} /> Start</button>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+        {!active && (
+          <button className="train-quiet" onClick={() => start()}><Icon name="plus" size={16} /> Start an empty workout</button>
+        )}
       </section>
 
+      {menu && (
+        <ActionSheet
+          title={menu.name}
+          onClose={() => setMenu(undefined)}
+          actions={[
+            { label: 'Edit', run: () => navigate(`/templates/${menu.id}`) },
+            { label: 'Duplicate', run: () => { store.save('template', duplicateTemplate(menu)); onToast(`Duplicated ${menu.name}`) } },
+            { label: 'Delete', danger: true, run: () => setDeleting(menu) },
+          ]}
+        />
+      )}
       {deleting && (
         <Confirm
           title={`Delete ${deleting.name}?`}
@@ -108,22 +135,5 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
         />
       )}
     </>
-  )
-}
-
-function TemplateMenu({ onEdit, onDuplicate, onDelete }: { onEdit: () => void; onDuplicate: () => void; onDelete: () => void }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div style={{ position: 'relative' }}>
-      <button className="icon-button" aria-label="Template options" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="more" size={22} stroke={3} /></button>
-      {open && (
-        <div className="card" style={{ position: 'absolute', right: 0, top: 40, zIndex: 10, padding: 6, minWidth: 160, background: 'var(--raised)' }} onMouseLeave={() => setOpen(false)}>
-          {[['Edit', onEdit], ['Duplicate', onDuplicate], ['Delete', onDelete]].map(([label, action]) => (
-            <button key={label as string} className="list-row" style={{ padding: '10px 10px', color: label === 'Delete' ? 'var(--danger)' : undefined }}
-              onClick={() => { setOpen(false); (action as () => void)() }}>{label as string}</button>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }
