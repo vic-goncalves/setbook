@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { previewOf } from '../src/chats'
 import { call, devLogin, json, uuid } from './helpers'
 
 const conversation = (text: string) => ({
@@ -14,6 +15,15 @@ function put(token: string, id: string, body: unknown) {
   return call(`/v1/chats/${id}`, { method: 'PUT', token, body: JSON.stringify(body) })
 }
 
+describe('chat previews', () => {
+  it('uses the latest reply as plain text, shortened', () => {
+    const reply = (text: string) => ({ role: 'assistant', content: [{ type: 'thinking', thinking: '' }, { type: 'text', text }] })
+    expect(previewOf([{ role: 'user', content: [] }])).toBe('')
+    expect(previewOf([reply('Old'), { role: 'user', content: [] }, reply('Your **bench** is up:\n- 185 x 5')])).toBe('Your bench is up: 185 x 5')
+    expect(previewOf([reply('a'.repeat(300))])).toHaveLength(140)
+  })
+})
+
 describe('saved chats', () => {
   it('saves, lists newest first, reopens exactly and deletes', async () => {
     const { accessToken: token } = await devLogin('chats-crud')
@@ -25,6 +35,7 @@ describe('saved chats', () => {
 
     const list = await json(await call('/v1/chats', { token }))
     expect(list.chats.map((c: { title: string }) => c.title)).toEqual(['First, renamed', 'Second'])
+    expect(list.chats[0].preview).toBe('Answer')
 
     const opened = await json(await call(`/v1/chats/${a.toLowerCase()}`, { token }))
     expect(opened.messages).toEqual(conversation('x').messages.map((m, i) => (i === 0 ? { ...m, content: [{ type: 'text', text: 'First, renamed' }] } : m)))

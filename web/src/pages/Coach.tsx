@@ -2,9 +2,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { decide, deleteChat, isContextBlock, listChats, newChat, openChat, retry, send, stop, useChat, type Block, type ChatSummary, type Message } from '../chat/conversation'
 import { Markdown } from '../chat/markdown'
 import { toolActivity } from '../chat/tools'
-import { relativeDay } from '../format'
 import { useStore, type Snapshot } from '../store'
 import { PageHeader, Sheet } from '../ui/components'
+import { SwipeRow } from '../ui/swipe'
+import { tap } from '../device'
 import { Icon } from '../ui/icons'
 
 const WRITE_TOOLS = new Set(['save_template', 'delete_template', 'create_exercise'])
@@ -109,7 +110,7 @@ export function Coach() {
         title="Coach"
         action={
           <div className="coach-actions">
-            <button className="icon-button" onClick={() => setShowHistory(true)} disabled={chat.busy} aria-label="Chat history">
+            <button className="icon-button" onClick={() => { tap(); setShowHistory(true) }} disabled={chat.busy} aria-label="Chat history">
               <Icon name="history" size={21} />
             </button>
             {!empty && (
@@ -274,15 +275,49 @@ function AssistantBlock({ block, decisions, results }: { block: Block; decisions
   )
 }
 
-/** Saved conversations, newest first: open one to read or continue it. */
+/** Today, Yesterday, Previous 7 Days, Previous 30 Days, then by month: how Notes groups. */
+function groupOf(iso: string, now = new Date()): string {
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  const then = new Date(iso)
+  const days = Math.round((startOf(now) - startOf(then)) / 86_400_000)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return 'Previous 7 Days'
+  if (days < 30) return 'Previous 30 Days'
+  return then.toLocaleDateString(undefined, { month: 'long', year: then.getFullYear() === now.getFullYear() ? undefined : 'numeric' })
+}
+
+/** A time today and yesterday, the weekday this week, otherwise a short date. */
+function when(iso: string, group: string): string {
+  const d = new Date(iso)
+  if (group === 'Today' || group === 'Yesterday') return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  if (group === 'Previous 7 Days') return d.toLocaleDateString(undefined, { weekday: 'long' })
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+const UNDO_MS = 4000
+
+/** Saved conversations, newest first: open one to read or continue it. Swipe left to delete. */
 function History({ currentId, onClose }: { currentId: string; onClose: () => void }) {
   const [chats, setChats] = useState<ChatSummary[]>()
   const [error, setError] = useState<string>()
+  const [deleted, setDeleted] = useState<ChatSummary>()
+  const commit = useRef<{ id: string; timer: ReturnType<typeof setTimeout> } | undefined>(undefined)
   const load = () => listChats().then(setChats, (e: Error) => setError(e.message))
+
   useEffect(() => {
     void load()
+    // Closing the sheet during the undo window still deletes.
+    return () => {
+      if (commit.current) {
+        clearTimeout(commit.current.timer)
+        void deleteChat(commit.current.id).catch(() => undefined)
+      }
+    }
   }, [])
+
   const open = async (id: string) => {
+    tap()
     try {
       if (id !== currentId) await openChat(id)
       onClose()
@@ -290,29 +325,84 @@ function History({ currentId, onClose }: { currentId: string; onClose: () => voi
       setError((e as Error).message)
     }
   }
-  const remove = async (id: string) => {
-    setChats((list) => list?.filter((c) => c.id !== id))
-    await deleteChat(id).catch((e: Error) => {
+
+  const finishDelete = () => {
+    const pending = commit.current
+    if (!pending) return
+    clearTimeout(pending.timer)
+    commit.current = undefined
+    setDeleted(undefined)
+    void deleteChat(pending.id).catch((e: Error) => {
       setError(e.message)
       void load()
     })
   }
+
+  const remove = (chat: ChatSummary) => {
+    finishDelete() // one undo at a time: the previous delete goes through now
+    setChats((list) => list?.filter((c) => c.id !== chat.id))
+    setDeleted(chat)
+    commit.current = { id: chat.id, timer: setTimeout(finishDelete, UNDO_MS) }
+  }
+
+  const undo = () => {
+    const chat = deleted
+    if (!chat || !commit.current) return
+    tap()
+    clearTimeout(commit.current.timer)
+    commit.current = undefined
+    setDeleted(undefined)
+    setChats((list) => [...(list ?? []), chat].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))
+  }
+
+  const groups: [string, ChatSummary[]][] = []
+  for (const c of chats ?? []) {
+    const g = groupOf(c.updatedAt)
+    if (groups.at(-1)?.[0] === g) groups.at(-1)![1].push(c)
+    else groups.push([g, [c]])
+  }
+
   return (
-    <Sheet title="Chats" onClose={onClose} actions={<button className="bar-button strong" onClick={() => { newChat(); onClose() }}>New</button>}>
-      {error && <div className="banner warn" role="alert">{error}</div>}
-      {!chats && !error && <div className="spinner" style={{ margin: '40px auto' }} />}
-      {chats?.length === 0 && <p className="subtle" style={{ textAlign: 'center', padding: '32px 0' }}>Your chats will show up here.</p>}
-      {chats && chats.length > 0 && (
-        <div className="coach-history">
-          {chats.map((c) => (
-            <div key={c.id} className={`coach-history-row${c.id === currentId ? ' current' : ''}`}>
-              <button className="spacer coach-history-open" onClick={() => void open(c.id)}>
-                <span className="coach-history-title">{c.title}</span>
-                <span className="coach-history-date">{c.id === currentId ? 'Open now' : capitalize(relativeDay(c.updatedAt))}</span>
-              </button>
-              <button className="icon-button" onClick={() => void remove(c.id)} aria-label={`Delete "${c.title}"`}><Icon name="trash" size={18} /></button>
+    <Sheet
+      title="Chats"
+      onClose={onClose}
+      leading={<button className="bar-button" onClick={() => { tap(); newChat(); onClose() }} aria-label="New chat"><Icon name="compose" size={21} /></button>}
+      actions={<button className="bar-button strong" onClick={onClose}>Done</button>}
+    >
+      <div className="coach-history">
+        {error && <div className="banner warn" role="alert">{error}</div>}
+        {!chats && !error && <div className="spinner" style={{ margin: '48px auto' }} />}
+        {chats?.length === 0 && (
+          <div className="coach-history-empty">
+            <Icon name="history" size={28} stroke={1.6} />
+            <strong>No chats yet</strong>
+            <span>Conversations with your coach are saved here, so you can pick them up later.</span>
+          </div>
+        )}
+        {groups.map(([group, list]) => (
+          <section key={group} className="coach-history-group">
+            <h3 className="coach-history-heading">{group}</h3>
+            <div className="coach-history-list">
+              {list.map((c) => (
+                <SwipeRow key={c.id} onDelete={() => remove(c)}>
+                  <button className={`coach-history-row${c.id === currentId ? ' current' : ''}`} onClick={() => void open(c.id)}>
+                    <span className="coach-history-top">
+                      <span className="coach-history-title">{c.title}</span>
+                      <span className="coach-history-time">{when(c.updatedAt, group)}</span>
+                    </span>
+                    <span className="coach-history-preview">{c.id === currentId ? <><b>Open now</b>{c.preview ? ` · ${c.preview}` : ''}</> : c.preview || 'No reply yet'}</span>
+                  </button>
+                </SwipeRow>
+              ))}
             </div>
-          ))}
+          </section>
+        ))}
+        {chats && chats.length > 0 && <p className="coach-history-hint">Swipe left on a chat to delete it.</p>}
+      </div>
+      {deleted && (
+        <div className="coach-undo" role="status">
+          <span className="spacer">Chat deleted</span>
+          <button className="coach-undo-button" onClick={undo}>Undo</button>
         </div>
       )}
     </Sheet>

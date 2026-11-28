@@ -65,7 +65,7 @@ export function EmptyState({ title, message, action }: { title: string; message:
   )
 }
 
-export function Sheet({ title, onClose, children, actions }: { title: string; onClose: () => void; children: ReactNode; actions?: ReactNode }) {
+export function Sheet({ title, onClose, children, actions, leading }: { title: string; onClose: () => void; children: ReactNode; actions?: ReactNode; leading?: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', onKey)
@@ -79,7 +79,7 @@ export function Sheet({ title, onClose, children, actions }: { title: string; on
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="sheet" role="dialog" aria-modal="true" aria-label={title}>
         <div className="sheet-head">
-          <button className="bar-button" onClick={onClose} style={{ minWidth: 64, textAlign: 'left' }}>Cancel</button>
+          {leading ? <div style={{ minWidth: 64, display: 'flex' }}>{leading}</div> : <button className="bar-button" onClick={onClose} style={{ minWidth: 64, textAlign: 'left' }}>Cancel</button>}
           <strong style={{ fontSize: 17, textAlign: 'center', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</strong>
           <div style={{ minWidth: 64, display: 'flex', justifyContent: 'flex-end' }}>{actions}</div>
         </div>

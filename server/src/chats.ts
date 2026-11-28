@@ -21,13 +21,31 @@ const chatSchema = z.object({
   decisions: z.record(z.enum(['approved', 'declined', 'failed'])).default({}),
 })
 
+/** The latest reply's opening words, as plain text, for the history list. */
+export function previewOf(messages: { role: string; content: unknown[] }[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]!
+    if (m.role !== 'assistant') continue
+    const text = m.content
+      .filter((b): b is { type: 'text'; text: string } => typeof b === 'object' && b !== null && (b as { type?: string }).type === 'text' && typeof (b as { text?: unknown }).text === 'string')
+      .map((b) => b.text)
+      .join(' ')
+      .replace(/[*_`#>]/g, '')
+      .replace(/^\s*[-•]\s+/gm, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (text) return text.length > 140 ? `${text.slice(0, 139).trimEnd()}…` : text
+  }
+  return ''
+}
+
 export const chats = new Hono<AppBindings>()
 
 chats.get('/', async (c) => {
-  const { results } = await c.env.DB.prepare('SELECT id, title, created_at, updated_at FROM chats WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?')
+  const { results } = await c.env.DB.prepare('SELECT id, title, preview, created_at, updated_at FROM chats WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?')
     .bind(c.get('auth').userId, LIST_LIMIT)
-    .all<{ id: string; title: string; created_at: string; updated_at: string }>()
-  return c.json({ chats: results.map((r) => ({ id: r.id, title: r.title, createdAt: r.created_at, updatedAt: r.updated_at })) })
+    .all<{ id: string; title: string; preview: string; created_at: string; updated_at: string }>()
+  return c.json({ chats: results.map((r) => ({ id: r.id, title: r.title, preview: r.preview, createdAt: r.created_at, updatedAt: r.updated_at })) })
 })
 
 chats.get('/:id', async (c) => {
@@ -53,10 +71,10 @@ chats.put('/:id', async (c) => {
   const chat = parse(chatSchema, json)
   const now = nowIso()
   await c.env.DB.prepare(
-    `INSERT INTO chats (user_id, id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT (user_id, id) DO UPDATE SET title = excluded.title, body = excluded.body, updated_at = excluded.updated_at`,
+    `INSERT INTO chats (user_id, id, title, preview, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (user_id, id) DO UPDATE SET title = excluded.title, preview = excluded.preview, body = excluded.body, updated_at = excluded.updated_at`,
   )
-    .bind(c.get('auth').userId, id, chat.title, JSON.stringify({ messages: chat.messages, decisions: chat.decisions }), now, now)
+    .bind(c.get('auth').userId, id, chat.title, previewOf(chat.messages), JSON.stringify({ messages: chat.messages, decisions: chat.decisions }), now, now)
     .run()
   return c.json({ id, updatedAt: now })
 })

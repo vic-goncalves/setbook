@@ -113,6 +113,8 @@ function upload() {
 export interface ChatSummary {
   id: string
   title: string
+  /** The latest reply's opening words. */
+  preview: string
   updatedAt: string
 }
 

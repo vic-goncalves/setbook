@@ -373,12 +373,30 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
   .composing .coach-composer { bottom: 0; }
 }
 
-/* Chat history sheet */
-.coach-history { display: flex; flex-direction: column; }
-.coach-history-row { display: flex; align-items: center; gap: 4px; border-bottom: 0.5px solid var(--hairline); }
-.coach-history-row:last-child { border-bottom: 0; }
-.coach-history-open { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 14px 0; min-width: 0; text-align: left; }
-.coach-history-title { font-size: 16px; font-weight: 500; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.coach-history-date { font-size: 13px; color: var(--ink-3); }
-.coach-history-row.current .coach-history-date { color: var(--done); }
-.coach-history-row .icon-button { color: var(--ink-3); }
+/* Chat history sheet: grouped by date like Notes, two-line rows, swipe left to delete. */
+.coach-history { padding-bottom: 8px; }
+.coach-history-group + .coach-history-group { margin-top: 20px; }
+.coach-history-heading { margin: 4px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.coach-history-list { background: var(--raised); border-radius: 14px; overflow: hidden; }
+.coach-history-list .swipe { border-radius: 0; }
+.coach-history-list .swipe + .swipe .coach-history-row { box-shadow: inset 0 0.5px 0 #34343a; }
+.coach-history-list .swipe-content { background: var(--raised); }
+.coach-history-row { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 12px 16px; text-align: left; min-height: 64px; justify-content: center; }
+.coach-history-row:active { background: #26262a; }
+.coach-history-top { display: flex; align-items: baseline; gap: 12px; width: 100%; }
+.coach-history-title { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coach-history-time { flex: none; font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.coach-history-preview {
+  font-size: 14px; line-height: 1.35; color: var(--ink-2); width: 100%;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.coach-history-preview b { color: var(--done); font-weight: 600; }
+.coach-history-hint { margin: 16px 0 0; text-align: center; font-size: 12px; color: var(--ink-3); }
+.coach-history-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 24px; text-align: center; color: var(--ink-3); }
+.coach-history-empty strong { color: var(--ink); font-size: 17px; margin-top: 4px; }
+.coach-history-empty span { font-size: 14px; line-height: 1.4; max-width: 260px; }
+.coach-undo {
+  position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; margin: 12px -4px 0; padding: 10px 10px 10px 16px;
+  border-radius: 14px; background: #2c2c31; border: 0.5px solid #3a3a40; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); font-size: 15px; animation: pop 0.2s var(--ease);
+}
+.coach-undo-button { font-weight: 600; color: var(--done); padding: 6px 8px; font-size: 15px; }
