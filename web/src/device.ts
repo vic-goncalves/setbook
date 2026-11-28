@@ -72,10 +72,12 @@ export function registerServiceWorker() {
 
 /**
  * iOS: after the keyboard closes, Safari can leave the layout shifted up, with a black band
- * under the tab bar, until the page is scrolled. It also happens on pages too short to
- * scroll, where nothing can be scrolled to fix it. So once the keyboard is gone, make the
- * page briefly 1px taller, scroll by 1px and back: a real scroll that makes iOS re-lay out.
+ * under the tab bar, until the page is scrolled. A real scroll makes it re-lay out (a long
+ * Coach thread gets one for free when it scrolls to its newest message). A page exactly one
+ * screen tall has nothing to scroll, and a 1px nudge isn't enough there, so it briefly gets
+ * room at the bottom, scrolls into it and back while the keyboard is still sliding away.
  */
+const ROOM = 80
 export function settleAfterKeyboard() {
   const vv = window.visualViewport
   let lastHeight = vv?.height ?? 0
@@ -90,6 +92,16 @@ export function settleAfterKeyboard() {
       if (typing()) return // moved to another field: the keyboard is still up
       const root = document.documentElement
       const y = window.scrollY
+      if (root.scrollHeight - window.innerHeight < 2) {
+        // Too short to scroll: add room, scroll into it, then back and remove it.
+        root.style.paddingBottom = `${ROOM}px`
+        window.scrollTo(0, ROOM)
+        setTimeout(() => {
+          window.scrollTo(0, 0)
+          root.style.paddingBottom = ''
+        }, 40)
+        return
+      }
       // A chat scrolled to its newest message should stay there.
       const atEnd = y + window.innerHeight >= root.scrollHeight - 4
       root.style.minHeight = 'calc(100% + 1px)'
