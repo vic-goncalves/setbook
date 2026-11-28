@@ -200,3 +200,21 @@ export function estimatedMinutes(t: WorkoutTemplate): number {
   }
   return Math.max(5, Math.round(seconds / 60 / 5) * 5)
 }
+
+const DAY_MS = 86_400_000
+const atNoon = (d: string) => new Date(`${d}T12:00:00Z`)
+const plusDays = (d: string, n: number) => new Date(atNoon(d).getTime() + n * DAY_MS).toISOString().slice(0, 10)
+const mondayOf = (d: string) => plusDays(d, -((atNoon(d).getUTCDay() + 6) % 7))
+
+/** Consecutive weeks, up to this one, with at least one workout (this week may still be empty). */
+export function weekStreak(days: Set<string>, today: string): number {
+  let week = mondayOf(today)
+  const hasWorkout = (monday: string) => Array.from({ length: 7 }, (_, i) => plusDays(monday, i)).some((d) => days.has(d))
+  if (!hasWorkout(week)) week = plusDays(week, -7)
+  let streak = 0
+  while (hasWorkout(week)) {
+    streak++
+    week = plusDays(week, -7)
+  }
+  return streak
+}
