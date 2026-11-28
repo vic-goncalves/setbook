@@ -276,7 +276,7 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
 .coach .coach-new { color: var(--ink); margin-bottom: 2px; }
 
-.coach-empty { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding-top: 8px; }
+.coach-empty { flex: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding: 8px 0 20px; }
 .coach-hero { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 12px 0; }
 .coach-hero-mark {
   width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 18px; color: var(--ink);
@@ -284,14 +284,16 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 }
 .coach-hero h2 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.15; }
 .coach-hero p { margin: 8px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.45; max-width: 330px; }
-.coach-ideas { display: flex; flex-direction: column; background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; overflow: hidden; }
-.coach-idea { display: flex; align-items: center; gap: 12px; min-height: 54px; padding: 0 14px; text-align: left; font-size: 16px; color: var(--ink); transition: background-color 0.15s; }
-.coach-idea + .coach-idea { border-top: 0.5px solid var(--hairline); }
+.coach-ideas { display: flex; flex-direction: column; gap: 10px; }
+.coach-idea {
+  display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 10px 16px 10px 12px; text-align: left; font-size: 16px; line-height: 1.3; color: var(--ink);
+  background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; transition: background-color 0.15s;
+}
 .coach-idea:active { background: var(--raised); }
-.coach-idea-icon { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--raised); color: var(--ink-2); flex: none; }
+.coach-idea-icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--raised); color: var(--ink-2); flex: none; }
 .coach-idea-go { color: var(--ink-3); transform: rotate(45deg); display: grid; }
 
-.coach-thread { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 6px 0 20px; -webkit-user-select: text; user-select: text; }
+.coach-thread { flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 6px 0 24px; -webkit-user-select: text; user-select: text; }
 .coach-user {
   align-self: flex-end; max-width: 82%; padding: 10px 15px; border-radius: 20px 20px 6px 20px; margin-top: 6px;
   background: #2a2a2f; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.38; font-size: 17px;
@@ -345,11 +347,11 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .coach-retry { flex: none; min-height: 36px; padding: 0 12px; border-radius: 999px; background: var(--raised); font-size: 15px; gap: 6px; }
 
 .coach-composer {
-  position: sticky; bottom: var(--tabbar); z-index: 25; margin: 0 calc(-1 * var(--page)); padding: 8px var(--page) 10px;
+  position: sticky; bottom: var(--tabbar); z-index: 25; margin: 0 calc(-1 * var(--page)); padding: 12px var(--page) 14px;
   background: rgba(11, 11, 12, 0.88); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
 }
 .coach-field {
-  display: flex; align-items: flex-end; gap: 6px; padding: 5px 5px 5px 16px; border-radius: 24px;
+  display: flex; align-items: flex-end; gap: 8px; min-height: 52px; padding: 7px 7px 7px 18px; border-radius: 26px;
   background: var(--surface); border: 0.5px solid #34343a; transition: border-color 0.15s;
 }
 .coach-field:focus-within { border-color: #4a4a52; }
@@ -358,7 +360,7 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 }
 .coach-field textarea::placeholder { color: var(--ink-3); }
 .coach-field textarea:focus { outline: none; }
-.coach-send { flex: none; width: 36px; height: 36px; border-radius: 999px; background: var(--ink); color: var(--bg); display: grid; place-items: center; transition: transform 0.12s var(--ease), background-color 0.15s; }
+.coach-send { flex: none; width: 38px; height: 38px; border-radius: 999px; background: var(--ink); color: var(--bg); display: grid; place-items: center; transition: transform 0.12s var(--ease), background-color 0.15s; }
 .coach-send:active:not(:disabled) { transform: scale(0.92); }
 .coach-send:disabled { opacity: 1; background: var(--raised); color: var(--ink-3); }
 .coach-send.stop span { width: 12px; height: 12px; border-radius: 3px; background: var(--bg); }
