@@ -272,7 +272,10 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 
 /* Coach (chat). Built for one-handed phone use: suggestions and the composer sit in thumb
    reach above the tab bar; the tab bar steps aside while typing, as in Messages. */
-.shell:has(.coach) { padding-bottom: 0; }
+/* The page ends where the tab bar starts, so the sticky composer rests above it and never
+   covers the last message. While typing on a phone the tab bar is hidden. */
+.shell:has(.coach) { padding-bottom: var(--tabbar); }
+@media (max-width: 700px) { .composing .shell:has(.coach) { padding-bottom: 0; } }
 .coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
 .coach-actions { display: flex; align-items: center; gap: 2px; margin-bottom: 2px; }
 .coach-actions .icon-button { color: var(--ink); }

@@ -72,7 +72,9 @@ export function Coach() {
 
   // Follow the conversation as it grows, like a messaging app.
   useEffect(() => {
-    if (!empty) end.current?.scrollIntoView({ block: 'end', behavior: chat.live ? 'auto' : 'smooth' })
+    // To the true end of the page: the last message then sits just above the composer.
+    // Instant, not smooth: a smooth scroll gets cut short when the next update lands.
+    if (!empty) window.scrollTo(0, document.documentElement.scrollHeight)
   }, [empty, chat.messages.length, chat.live, chat.activity, chat.pending, chat.error])
 
   // Grow the text field with its content, up to about five lines.
@@ -89,7 +91,12 @@ export function Coach() {
     const root = document.documentElement
     const el = input.current
     const on = () => root.classList.add('composing')
-    const off = () => root.classList.remove('composing')
+    // The tab bar coming back makes the page taller: stay on the newest message if we were there.
+    const off = () => {
+      const atEnd = window.scrollY + window.innerHeight >= root.scrollHeight - 4
+      root.classList.remove('composing')
+      if (atEnd) requestAnimationFrame(() => window.scrollTo(0, root.scrollHeight))
+    }
     el?.addEventListener('focus', on)
     el?.addEventListener('blur', off)
     return () => {

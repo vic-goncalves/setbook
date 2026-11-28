@@ -90,12 +90,14 @@ export function settleAfterKeyboard() {
       if (typing()) return // moved to another field: the keyboard is still up
       const root = document.documentElement
       const y = window.scrollY
+      // A chat scrolled to its newest message should stay there.
+      const atEnd = y + window.innerHeight >= root.scrollHeight - 4
       root.style.minHeight = 'calc(100% + 1px)'
       window.scrollTo(0, y + 1)
       requestAnimationFrame(() => {
-        const max = Math.max(0, root.scrollHeight - window.innerHeight)
-        window.scrollTo(0, Math.min(y, max))
         root.style.minHeight = ''
+        const max = Math.max(0, root.scrollHeight - window.innerHeight)
+        window.scrollTo(0, atEnd ? max : Math.min(y, max))
       })
     }, 100)
   }
