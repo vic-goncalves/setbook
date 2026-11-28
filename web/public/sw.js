@@ -1,6 +1,6 @@
 // Offline support for the app shell. Data lives in IndexedDB (see src/persist.ts) and
 // syncs through the API, which is never cached here.
-const CACHE = 'setbook-shell-v1'
+const CACHE = 'setbook-shell-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['./', './manifest.webmanifest', './apple-touch-icon.png', './icon-192.png'])))

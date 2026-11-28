@@ -102,7 +102,8 @@ Debug-only demo data without any server: launch with `-demo`, `-demo -demoWorkou
 
 ## App icon
 
-`swift scripts/render-icon.swift` regenerates the iPhone icon (light, dark and tinted) and the web home-screen icon.
+- Web (home screen): `python3 scripts/render-web-icon.py` renders the Liquid Glass icon (white glass dumbbell on black) to `web/public/`. Needs Pillow and NumPy. iOS keeps the icon from when the app was added, so remove it from the Home Screen and add it again to see a new one.
+- iPhone app: `swift scripts/render-icon.swift` regenerates the native icons (light, dark and tinted). It also writes the web icons in the old flat style, so run the Python script after it.
 
 ## Tests
 

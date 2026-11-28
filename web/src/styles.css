@@ -83,6 +83,12 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
   .topbar { display: none; }
   .shell { padding-top: var(--safe-top); }
   .immersive .shell { padding-top: 0; }
+  /* Solid strip behind the clock: content scrolls under it and is hidden, never faded or
+     blurred. Below sheets (z-index 50), above everything else. */
+  body::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; height: var(--safe-top); z-index: 45;
+    background: var(--bg); pointer-events: none;
+  }
   .tabbar {
     display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     padding: 6px 8px var(--safe-bottom); min-height: var(--tabbar);
