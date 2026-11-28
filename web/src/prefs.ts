@@ -28,6 +28,11 @@ export function setPrefs(patch: Partial<Prefs>) {
   if (patch.unit) void updateProfile({ massUnit: patch.unit }).catch(() => undefined)
 }
 
+/** The current preferences, for code outside React. */
+export function currentPrefs(): Prefs {
+  return prefs
+}
+
 export function reloadPrefs() {
   prefs = load()
   listeners.forEach((l) => l())

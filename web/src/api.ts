@@ -158,6 +158,23 @@ export async function api<T = unknown>(method: string, path: string, body?: unkn
   }
 }
 
+/**
+ * A signed-in POST whose response body is read as a stream (the chat). Refreshes the access
+ * token first if needed; errors before the stream starts are thrown like `api()` errors.
+ */
+export async function apiStream(path: string, body: unknown, signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+  if (!session) throw new ApiError(401, 'signed_out', 'Sign in to continue.')
+  const open = (token: string) =>
+    fetch(`${API_ORIGIN}${path}`, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` }, body: JSON.stringify(body), signal })
+  let response = await open(session.expiresAt > Date.now() ? session.accessToken : (await refresh()).accessToken)
+  if (response.status === 401) response = await open((await refresh()).accessToken)
+  if (!response.ok || !response.body) {
+    const data = await response.json().catch(() => null)
+    throw new ApiError(response.status, data?.error?.code ?? `http_${response.status}`, data?.error?.message ?? `Request failed (${response.status}).`)
+  }
+  return response.body
+}
+
 export async function updateProfile(patch: Partial<Pick<User, 'displayName' | 'massUnit'>>) {
   const user = await api<User>('PATCH', '/v1/me', patch)
   if (session) writeSession({ ...session, user })

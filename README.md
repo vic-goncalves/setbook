@@ -16,6 +16,7 @@ Web app (React, GitHub Pages) ──┘
 - **iPhone** (`App/`, `Packages/SetbookKit/`): everything is saved to SQLite on the phone first, so logging works offline. Triggers queue every change; sync pushes and pulls in the background.
 - **Web** (`web/`): React + Vite, deployed to GitHub Pages by `.github/workflows/deploy-web.yml`. It reads and writes through the same sync API.
 - **API** (`server/`): Hono on Cloudflare Workers with a D1 database. Google sign-in, rotating refresh sessions, idempotent push/pull with per-record revisions and explicit conflicts.
+- **Coach** (`web/src/chat/`, `server/src/chat*.ts`): a chat tab where Claude analyzes your training and builds templates. The browser keeps the conversation and runs the tools against the data it already has (with the same metric code as the Progress page); the Worker only holds the Anthropic API key and fixes the model, instructions and tools, then streams each reply. Changes to your data always show an Approve/Decline card first and save through normal sync.
 - **Contracts** (`contracts/`): the built-in exercise catalog and a sample backup with expected metric values, generated from Swift. The server validates against them and the web app's metric math is tested against them, so all three agree.
 
 Decisions and metric definitions: `docs/decisions.md`.
@@ -39,6 +40,15 @@ To set it up on a fork:
    ```
 
 The same web client serves the iPhone app too: the phone opens the sign-in page in the system browser sheet and receives a one-time code at `setbook://auth`, which only that phone can redeem (PKCE).
+
+## Coach (Claude)
+
+The Coach tab needs an Anthropic API key on the Worker; without one it says chat isn't set up.
+
+1. console.anthropic.com → API Keys → Create key. Set a monthly spend limit under Billing.
+2. Cloudflare dashboard → Workers & Pages → setbook → Settings → Variables and Secrets → Add → type **Secret**, name `ANTHROPIC_API_KEY`. (Or `cd server && npx wrangler secret put ANTHROPIC_API_KEY`.)
+
+The model is `CHAT_MODEL` in `server/wrangler.jsonc` (Claude Sonnet 5.5). A typical question costs a few cents. Conversations are kept on each device, not on the server. For local development, put `ANTHROPIC_API_KEY` in `server/.dev.vars`.
 
 ## Web app on your iPhone (recommended)
 
@@ -112,7 +122,7 @@ CI runs all three on every push (`.github/workflows/ci.yml`).
 
 ## Free-tier notes
 
-Workers free: 100k requests/day, 10 ms CPU per request. D1 free: 5M rows read and 100k rows written per day. Sync batches edits (a few seconds on the phone, under a second on the web), and each write is one record plus its change-log row, so a few friends training daily stay far below the limits.
+Workers free: 100k requests/day, 10 ms CPU per request (time waiting on Claude or D1 doesn't count; each Coach turn is one Worker request and one call to Anthropic). D1 free: 5M rows read and 100k rows written per day. Sync batches edits (a few seconds on the phone, under a second on the web), and each write is one record plus its change-log row, so a few friends training daily stay far below the limits.
 
 ## Not done yet
 

@@ -12,6 +12,7 @@
     "build:web": "cd ../web && npm run build"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "hono": "^4.13.22",
     "jose": "^5.10.0",
     "zod": "^3.25.76"

@@ -22,8 +22,10 @@
     "DEV_AUTH": "false",
     // Browser origins allowed to call the API and receive sign-in redirects. Local
     // development adds http://localhost:5173 through .dev.vars.
-    "WEB_ORIGINS": "https://vic-goncalves.github.io"
+    "WEB_ORIGINS": "https://vic-goncalves.github.io",
+    // Model for the in-app coach (POST /v1/chat).
+    "CHAT_MODEL": "claude-sonnet-5-5"
   }
-  // Secrets (never in this file): GOOGLE_CLIENT_SECRET, SESSION_SIGNING_KEY.
+  // Secrets (never in this file): GOOGLE_CLIENT_SECRET, SESSION_SIGNING_KEY, ANTHROPIC_API_KEY.
   // Set with `npx wrangler secret put <NAME>`; locally they live in .dev.vars.
 }

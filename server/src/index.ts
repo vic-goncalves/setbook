@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { account } from './account'
+import { chat } from './chat'
 import { allowedOrigins, auth, requireAuth } from './auth'
 import type { AppBindings } from './env'
 import { HttpError, renderError } from './errors'
@@ -26,6 +27,7 @@ app.route('/v1/auth', auth)
 app.use('/v1/*', requireAuth)
 app.route('/v1', account)
 app.route('/v1/sync', sync)
+app.route('/v1/chat', chat)
 
 app.all('/v1/*', () => {
   throw new HttpError(404, 'not_found', 'Not found.')

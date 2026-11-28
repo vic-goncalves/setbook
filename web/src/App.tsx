@@ -16,6 +16,8 @@ import { ExerciseDetail } from './pages/ExerciseDetail'
 import { BodyWeight } from './pages/BodyWeight'
 import { Exercises } from './pages/Exercises'
 import { Settings } from './pages/Settings'
+import { Coach } from './pages/Coach'
+import { reloadChat } from './chat/conversation'
 
 export function App() {
   const [signedIn, setSignedIn] = useState(() => currentUser() !== null)
@@ -50,6 +52,7 @@ export function App() {
   useEffect(() => {
     if (!signedIn) return
     void store.start()
+    reloadChat()
     return () => store.stop()
   }, [signedIn])
 
@@ -76,7 +79,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
   // The workout and the template editor take the whole screen with their own top bar,
   // like full-screen flows in iOS apps.
   const immersive = section === 'workout' || section === 'templates' || (section === 'history' && route[2] === 'edit')
-  const tabs: [string, string, 'dumbbell' | 'calendar' | 'chart'][] = [['train', 'Train', 'dumbbell'], ['history', 'History', 'calendar'], ['progress', 'Progress', 'chart']]
+  const tabs: [string, string, 'dumbbell' | 'calendar' | 'chart' | 'sparkle'][] = [['train', 'Train', 'dumbbell'], ['history', 'History', 'calendar'], ['progress', 'Progress', 'chart'], ['coach', 'Coach', 'sparkle']]
 
   useEffect(() => {
     document.documentElement.classList.toggle('immersive', immersive)
@@ -100,6 +103,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
         page = route[1] === 'exercise' && route[2] ? <ExerciseDetail id={route[2]} /> : route[1] === 'body-weight' ? <BodyWeight /> : <Progress />
         break
       case 'exercises': page = <Exercises />; break
+      case 'coach': page = <Coach />; break
       case 'settings': page = <Settings onSignedOut={onSignedOut} onToast={setToast} />; break
       default: page = <Train onToast={setToast} />
     }
