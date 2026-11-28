@@ -69,10 +69,11 @@ describe('chat', () => {
     expect(sent!.url).toContain('/v1/messages')
     expect(sent!.url.startsWith('https://api.anthropic.com/')).toBe(true)
     expect(sent!.headers.get('authorization')).toBe('Bearer sk-ant-test')
-    expect(sent!.headers.get('anthropic-beta')).toContain('server-side-fallback-2026-07-01')
+    // Haiku has no server-side fallback, so the request doesn't ask for one.
+    expect(sent!.headers.get('anthropic-beta')).not.toContain('server-side-fallback')
     expect(sent!.body.model).toBe(DEFAULT_CHAT_MODEL)
     expect(sent!.body.stream).toBe(true)
-    expect(sent!.body.fallbacks).toBe('default')
+    expect(sent!.body.fallbacks).toBeUndefined()
     expect(sent!.body.tools.map((t: { name: string }) => t.name)).toEqual(chatTools.map((t) => t.name))
     expect(sent!.body.system).toContain('Setbook')
     expect(sent!.body.messages).toEqual([{ role: 'user', content: 'hi' }])
@@ -89,6 +90,19 @@ describe('chat', () => {
     const unions = chatTools.filter((t) => t.strict).reduce((n, t) => n + count(t.input_schema), 0)
     expect(unions).toBeGreaterThan(0)
     expect(unions).toBeLessThanOrEqual(MAX_STRICT_UNIONS)
+  })
+
+  it('asks for server-side fallback on models that have it', async () => {
+    const { accessToken } = await devLogin('chat-sonnet')
+    let sent: { headers: Headers; body: any } | undefined
+    setChatFetchForTesting(async (_input, init) => {
+      sent = { headers: new Headers(init?.headers), body: JSON.parse(String(init?.body)) }
+      return reply('Hi')
+    })
+    await (await post(accessToken, { messages: [{ role: 'user', content: 'hi' }] }, { ...KEY, CHAT_MODEL: 'claude-sonnet-5-5' })).text()
+    expect(sent!.body.model).toBe('claude-sonnet-5-5')
+    expect(sent!.body.fallbacks).toBe('default')
+    expect(sent!.headers.get('anthropic-beta')).toContain('server-side-fallback-2026-07-01')
   })
 
   it('reports Anthropic errors as an error line', async () => {

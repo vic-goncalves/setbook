@@ -17,7 +17,7 @@ import { chatSystemPrompt, chatTools } from './chat-prompt'
  * the browser must send back unchanged), or `{ type: "error", error }` if the turn failed.
  */
 
-export const DEFAULT_CHAT_MODEL = 'claude-sonnet-5-5'
+export const DEFAULT_CHAT_MODEL = 'claude-haiku-5-5'
 const MAX_TOKENS = 16000
 const MAX_MESSAGES = 200
 const MAX_BODY_BYTES = 600_000
@@ -58,8 +58,12 @@ chat.post('/', async (c) => {
   const { messages } = parse(requestSchema, body)
   if (messages[0]!.role !== 'user') throw new HttpError(400, 'invalid_request', 'A conversation starts with a user message.')
 
+  const model = c.env.CHAT_MODEL || DEFAULT_CHAT_MODEL
+  // Server-side fallback (retry a safety decline on another model) exists for Sonnet, Opus
+  // and Fable; Haiku has none, and a request that asks for it fails.
+  const fallback = !model.startsWith('claude-haiku')
   const stream = client(c.env).beta.messages.stream({
-    model: c.env.CHAT_MODEL || DEFAULT_CHAT_MODEL,
+    model,
     max_tokens: MAX_TOKENS,
     // Keep thinking blocks that no longer match (e.g. after a system prompt change in a
     // deploy) from failing old conversations: they're dropped instead.
@@ -70,9 +74,8 @@ chat.post('/', async (c) => {
     system: chatSystemPrompt,
     tools: chatTools,
     messages: messages as Anthropic.Beta.BetaMessageParam[],
-    // If a safety classifier declines, the API retries on another model where it can.
-    betas: ['server-side-fallback-2026-07-01', 'thinking-binding-controls-2026-08-01'],
-    fallbacks: 'default',
+    betas: ['thinking-binding-controls-2026-08-01', ...(fallback ? (['server-side-fallback-2026-07-01'] as const) : [])],
+    ...(fallback ? { fallbacks: 'default' as const } : {}),
   })
 
   const encoder = new TextEncoder()
@@ -81,7 +84,10 @@ chat.post('/', async (c) => {
     async start(controller) {
       try {
         for await (const event of stream) controller.enqueue(line(event))
-        controller.enqueue(line({ type: 'final', message: await stream.finalMessage() }))
+        const message = await stream.finalMessage()
+        // Token usage per turn, for cost checks in the Worker's logs (wrangler tail / dashboard).
+        console.log(JSON.stringify({ chatTurn: { model: message.model, stop: message.stop_reason, usage: message.usage } }))
+        controller.enqueue(line({ type: 'final', message }))
       } catch (error) {
         controller.enqueue(line({ type: 'error', error: describe(error) }))
       } finally {
