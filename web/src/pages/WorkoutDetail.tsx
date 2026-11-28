@@ -3,7 +3,8 @@ import { workoutHighlights, type ExerciseHighlight } from '../domain/metrics'
 import { repeatSession, templateFromSession, workingSetCount } from '../domain/workout'
 import { fromKilograms, massIn, sameLoad, tracksLoad, type MassUnit, type WorkoutExercise, type WorkoutSet } from '../domain/types'
 import { num } from '../format'
-import { compact, minutes } from './History'
+import { compact } from './History'
+import type { WorkoutSession } from '../domain/types'
 import { usePrefs } from '../prefs'
 import { navigate } from '../router'
 import { store, useStore } from '../store'
@@ -39,13 +40,15 @@ export function WorkoutDetail({ id, onToast }: { id: string; onToast: (m: string
       )}
       <header className="detail-head">
         <h1 className="title">{session.name}</h1>
-        <div className="detail-when">{new Date(session.startedAt).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: session.timeZoneIdentifier })}</div>
+        <div className="detail-when">
+          <span>{new Date(session.startedAt).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: session.timeZoneIdentifier })}</span>
+          {records > 0 && <span className="hist-pr">{records} PR{records === 1 ? '' : 's'}</span>}
+        </div>
       </header>
       <div className="detail-stats">
-        <div><span className="num">{minutes(session) ?? '-'}</span><label>Duration</label></div>
+        <div><span className="num">{durationParts(session)}</span><label>Duration</label></div>
         <div><span className="num">{workingSetCount(session)}</span><label>Sets</label></div>
         <div><span className="num">{volumeKg > 0 ? <>{compact(fromKilograms(volumeKg, unit))}<small> {unit}</small></> : '-'}</span><label>Volume</label></div>
-        {records > 0 && <div className="pr"><span className="num">{records}</span><label>{records === 1 ? 'Record' : 'Records'}</label></div>}
       </div>
       {session.notes && <p className="subtle" style={{ lineHeight: 1.45 }}>{session.notes}</p>}
       <div className="detail-exercises">
@@ -133,4 +136,12 @@ function ExerciseCard({ exercise: e, highlight: h, unit }: { exercise: WorkoutEx
       )}
     </section>
   )
+}
+
+/** "49 min" or "1h 2m", with the units small so the stat fits its box. */
+function durationParts(s: WorkoutSession) {
+  if (!s.finishedAt) return '-'
+  const m = Math.round((Date.parse(s.finishedAt) - Date.parse(s.startedAt)) / 60000)
+  if (m < 60) return <>{m}<small> min</small></>
+  return <>{Math.floor(m / 60)}<small>h </small>{m % 60}<small>m</small></>
 }

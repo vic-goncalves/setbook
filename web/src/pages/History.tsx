@@ -32,8 +32,11 @@ export function History() {
   const { unit } = usePrefs()
   const completed = useMemo(() => data.sessions.filter((s) => s.state === 'completed'), [data.sessions])
   const today = localDay(new Date().toISOString(), localTimeZone())
-  const [month, setMonth] = useState(today.slice(0, 7)) // "YYYY-MM"
+  // The calendar shows the week (collapsed) or month (expanded) around this day.
+  const [anchor, setAnchor] = useState(today)
+  const [expanded, setExpanded] = useState(false)
   const [selected, setSelected] = useState<string>()
+  const month = anchor.slice(0, 7) // "YYYY-MM": the list and totals follow it
 
   // Records and volume per workout, computed once per data change.
   const summary = useMemo(() => {
@@ -57,12 +60,17 @@ export function History() {
   const totalMinutes = inMonth.reduce((n, s) => n + (s.finishedAt ? (Date.parse(s.finishedAt) - Date.parse(s.startedAt)) / 60000 : 0), 0)
   const firstMonth = completed.length ? dayOf(completed.at(-1)!).slice(0, 7) : today.slice(0, 7)
 
+  const firstDay = completed.length ? dayOf(completed.at(-1)!) : today
   const go = (by: number) => {
-    const [y, m] = month.split('-').map(Number) as [number, number]
-    const next = new Date(Date.UTC(y, m - 1 + by, 1)).toISOString().slice(0, 7)
-    if (next > today.slice(0, 7) || next < firstMonth) return
+    let next: string
+    if (expanded) {
+      const [y, m] = month.split('-').map(Number) as [number, number]
+      next = new Date(Date.UTC(y, m - 1 + by, 1)).toISOString().slice(0, 10)
+    } else next = addDays(anchor, 7 * by)
+    if (by > 0 && (expanded ? next.slice(0, 7) > today.slice(0, 7) : mondayOf(next) > today)) return
+    if (by < 0 && (expanded ? next.slice(0, 7) < firstMonth : addDays(mondayOf(next), 6) < firstDay)) return
     tap()
-    setMonth(next)
+    setAnchor(next)
     setSelected(undefined)
   }
 
@@ -80,31 +88,30 @@ export function History() {
     <>
       <PageHeader account title="History" />
 
-      <MonthCalendar
-        month={month}
+      <HistoryCalendar
+        anchor={anchor}
+        expanded={expanded}
         label={monthLabel}
+        summary={[`${inMonth.length} workout${inMonth.length === 1 ? '' : 's'}`, `${inMonth.reduce((n, s) => n + workingSetCount(s), 0)} sets`, formatTime(totalMinutes)].join(' · ')}
         today={today}
         selected={selected}
         trained={byDay}
-        canPrev={month > firstMonth}
-        canNext={month < today.slice(0, 7)}
+        canPrev={expanded ? month > firstMonth : mondayOf(anchor) > firstDay}
+        canNext={expanded ? month < today.slice(0, 7) : addDays(mondayOf(anchor), 7) <= today}
         onMove={go}
+        onToggle={() => { tap(); setExpanded(!expanded); if (selected) setAnchor(selected) }}
         onSelect={(d) => {
           tap()
           setSelected(d === selected ? undefined : d)
         }}
       />
-      <div className="cal-stats">
-        <div><span className="num">{inMonth.length}</span><label>Workouts</label></div>
-        <div><span className="num">{inMonth.reduce((n, s) => n + workingSetCount(s), 0)}</span><label>Sets</label></div>
-        <div><span className="num">{totalMinutes >= 600 ? `${Math.round(totalMinutes / 60)}h` : totalMinutes >= 60 ? `${Math.floor(totalMinutes / 60)}h ${Math.round(totalMinutes % 60)}m` : `${Math.round(totalMinutes)}m`}</span><label>Time</label></div>
-        <div className={streak > 1 ? 'streak' : ''}><span className="num">{streak}<small> wk</small></span><label>Streak</label></div>
-      </div>
 
       <section className="section">
         <div className="hist-month">
-          <h2>{selected ? noon(selected).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }) : 'Workouts'}</h2>
-          {selected && <button className="hist-clear" onClick={() => setSelected(undefined)}>Show all</button>}
+          <h2>{selected ? noon(selected).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }) : monthLabel.replace(` ${new Date().getFullYear()}`, '')}</h2>
+          {selected
+            ? <button className="hist-clear" onClick={() => setSelected(undefined)}>Show all</button>
+            : streak > 1 && <span className="hist-streak">{streak}-week streak</span>}
         </div>
         {shown.length === 0 ? (
           <div className="hist-none">{selected ? (selected > today ? 'Nothing yet.' : 'Rest day.') : `No workouts in ${monthLabel}.`}</div>
@@ -123,10 +130,12 @@ export function History() {
                     <span className="hist-dom num">{date.toLocaleDateString(undefined, { day: 'numeric', ...opts })}</span>
                   </div>
                   <div className="hist-main">
-                    <span className="hist-name">{s.name}</span>
+                    <span className="hist-title">
+                      <span className="hist-name">{s.name}</span>
+                      {info && info.records > 0 && <span className="hist-pr">{info.records} PR{info.records === 1 ? '' : 's'}</span>}
+                    </span>
                     <span className="hist-meta num">{[minutes(s), `${sets} set${sets === 1 ? '' : 's'}`, volume].filter(Boolean).join(' · ')}</span>
                   </div>
-                  {info && info.records > 0 && <span className="hist-pr">{info.records} PR{info.records === 1 ? '' : 's'}</span>}
                   <Chevron />
                 </a>
               )
@@ -138,21 +147,38 @@ export function History() {
   )
 }
 
-/** A month grid, Monday first. Trained days are filled; swipe sideways or use the arrows to move. */
-function MonthCalendar({ month, label, today, selected, trained, canPrev, canNext, onMove, onSelect }: {
-  month: string; label: string; today: string; selected?: string; trained: Map<string, WorkoutSession[]>
-  canPrev: boolean; canNext: boolean; onMove: (by: number) => void; onSelect: (day: string) => void
+function formatTime(minutes: number): string {
+  if (minutes >= 600) return `${Math.round(minutes / 60)}h`
+  if (minutes >= 60) return `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`
+  return `${Math.round(minutes)}m`
+}
+
+/**
+ * One compact card: the week (or, expanded, the whole month), Monday first, trained days
+ * filled. Arrows or a sideways swipe move a week or a month; tap a day for its workouts.
+ */
+function HistoryCalendar({ anchor, expanded, label, summary, today, selected, trained, canPrev, canNext, onMove, onToggle, onSelect }: {
+  anchor: string; expanded: boolean; label: string; summary: string; today: string; selected?: string; trained: Map<string, WorkoutSession[]>
+  canPrev: boolean; canNext: boolean; onMove: (by: number) => void; onToggle: () => void; onSelect: (day: string) => void
 }) {
-  const first = `${month}-01`
-  const start = mondayOf(first)
-  const [y, m] = month.split('-').map(Number) as [number, number]
-  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate()
-  const cells = Math.ceil(((noon(first).getUTCDay() + 6) % 7 + daysInMonth) / 7) * 7
+  const month = anchor.slice(0, 7)
+  let start: string
+  let cells: number
+  if (expanded) {
+    const first = `${month}-01`
+    const [y, m] = month.split('-').map(Number) as [number, number]
+    const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate()
+    start = mondayOf(first)
+    cells = Math.ceil(((noon(first).getUTCDay() + 6) % 7 + daysInMonth) / 7) * 7
+  } else {
+    start = mondayOf(anchor)
+    cells = 7
+  }
   const swipe = useRef<{ x: number; y: number } | undefined>(undefined)
 
   return (
     <div
-      className="cal"
+      className={`cal${expanded ? ' expanded' : ''}`}
       onPointerDown={(e) => { if (e.pointerType !== 'mouse') swipe.current = { x: e.clientX, y: e.clientY } }}
       onPointerUp={(e) => {
         const s = swipe.current
@@ -163,24 +189,29 @@ function MonthCalendar({ month, label, today, selected, trained, canPrev, canNex
       }}
     >
       <div className="cal-head">
-        <button className="cal-nav" onClick={() => onMove(-1)} disabled={!canPrev} aria-label="Previous month"><Icon name="back" size={18} stroke={2.4} /></button>
-        <span className="cal-title">{label}</span>
-        <button className="cal-nav" onClick={() => onMove(1)} disabled={!canNext} aria-label="Next month"><Icon name="chevron" size={18} stroke={2.4} /></button>
+        <button className="cal-title" onClick={onToggle} aria-expanded={expanded}>
+          <span className="cal-month">{label}<Icon name="down" size={16} stroke={2.6} /></span>
+          <span className="cal-summary num">{summary}</span>
+        </button>
+        <button className="cal-nav" onClick={() => onMove(-1)} disabled={!canPrev} aria-label={expanded ? 'Previous month' : 'Previous week'}><Icon name="back" size={17} stroke={2.4} /></button>
+        <button className="cal-nav" onClick={() => onMove(1)} disabled={!canNext} aria-label={expanded ? 'Next month' : 'Next week'}><Icon name="chevron" size={17} stroke={2.4} /></button>
       </div>
       <div className="cal-grid" role="grid" aria-label={label}>
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <span key={i} className="cal-dow">{d}</span>)}
         {Array.from({ length: cells }, (_, i) => {
           const day = addDays(start, i)
-          const inMonth = day.startsWith(month)
+          const hidden = expanded && !day.startsWith(month)
           const count = trained.get(day)?.length ?? 0
-          const classes = ['cal-day', inMonth ? '' : 'out', count ? 'on' : '', day === today ? 'today' : '', day === selected ? 'selected' : '', day > today ? 'later' : ''].filter(Boolean).join(' ')
+          const classes = ['cal-day', hidden ? 'out' : '', count ? 'on' : '', day === today ? 'today' : '', day === selected ? 'selected' : '', day > today ? 'later' : ''].filter(Boolean).join(' ')
           return (
-            <button key={day} className={classes} disabled={!inMonth} onClick={() => onSelect(day)}
-              aria-label={`${noon(day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' })}${count ? `, ${count} workout${count === 1 ? '' : 's'}` : ''}`}
-              aria-pressed={day === selected}>
-              <span className="num">{noon(day).getUTCDate()}</span>
-              {count > 1 && <i className="cal-more" />}
-            </button>
+            <div key={day} className="cal-cell">
+              {i < 7 && <span className="cal-dow">{noon(day).toLocaleDateString('en-US', { weekday: 'narrow', timeZone: 'UTC' })}</span>}
+              <button className={classes} disabled={hidden || day > today} onClick={() => onSelect(day)}
+                aria-label={`${noon(day).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' })}${count ? `, ${count} workout${count === 1 ? '' : 's'}` : ''}`}
+                aria-pressed={day === selected}>
+                <span className="num">{noon(day).getUTCDate()}</span>
+                {count > 1 && <i className="cal-more" />}
+              </button>
+            </div>
           )
         })}
       </div>

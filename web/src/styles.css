@@ -118,7 +118,9 @@ a { color: inherit; text-decoration: none; -webkit-touch-callout: none; }
 
 /* Type */
 .page-header { padding: 24px 0 8px; }
-.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-2); }
+/* Small labels in sentence case, as in current iOS (no all-caps anywhere). */
+.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0; color: var(--ink-2); }
+.section-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; color: var(--ink); }
 .title { font-size: 34px; font-weight: 700; letter-spacing: -0.6px; margin: 4px 0 0; line-height: 1.12; }
 .subtle { color: var(--ink-2); }
 .faint { color: var(--ink-3); }
@@ -465,7 +467,7 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .week-day.today .week-dot.on { box-shadow: inset 0 0 0 1.5px var(--done), 0 0 0 2px var(--bg), 0 0 0 3.5px var(--done); }
 
 /* History list */
-.hist-month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+.hist-month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
 .hist-month h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
 .hist-month span { font-size: 13px; color: var(--ink-3); }
 .hist-list { background: var(--surface); border: 0.5px solid var(--hairline); border-radius: 18px; overflow: hidden; }
@@ -476,19 +478,19 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .hist-dow { font-size: 12px; font-weight: 600; color: var(--ink-3); }
 .hist-dom { font-size: 21px; font-weight: 600; line-height: 1.1; }
 .hist-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.hist-name { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hist-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hist-name { min-width: 0; font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hist-meta { font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hist-pr { flex: none; padding: 3px 8px; border-radius: 999px; background: var(--done-soft); color: var(--done); font-size: 12px; font-weight: 700; }
+.hist-pr { flex: none; padding: 2px 7px; border-radius: 999px; background: var(--done-soft); color: var(--done); font-size: 12px; font-weight: 700; }
 
 /* Workout detail */
 .detail-head { padding: 8px 0 0; }
-.detail-when { margin-top: 4px; font-size: 15px; color: var(--ink-2); }
+.detail-when { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; font-size: 15px; color: var(--ink-2); }
 .detail-stats { display: flex; gap: 8px; margin-top: 16px; }
-.detail-stats > div { flex: 1; min-width: 0; padding: 12px; border-radius: 16px; background: var(--surface); border: 0.5px solid var(--hairline); display: flex; flex-direction: column; gap: 2px; }
-.detail-stats span { font-size: 21px; font-weight: 650; letter-spacing: -0.3px; white-space: nowrap; }
+.detail-stats > div { flex: 1; min-width: 0; padding: 10px 10px 10px 12px; border-radius: 16px; background: var(--surface); border: 0.5px solid var(--hairline); display: flex; flex-direction: column; gap: 2px; }
+.detail-stats span { font-size: 21px; font-weight: 650; letter-spacing: -0.4px; white-space: nowrap; }
 .detail-stats small { font-size: 13px; font-weight: 600; color: var(--ink-2); letter-spacing: 0; }
 .detail-stats label { font-size: 12px; color: var(--ink-3); font-weight: 500; }
-.detail-stats .pr span { color: var(--done); }
 .detail-exercises { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
 .ex-card { padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 0.5px solid var(--hairline); }
 .ex-head { display: flex; align-items: flex-start; gap: 10px; }
@@ -506,28 +508,29 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .ex-reps { color: var(--ink-2); font-weight: 500; }
 .ex-warmup { margin-top: 6px; font-size: 13px; color: var(--ink-3); }
 
-/* History calendar: a month at a glance, trained days filled, tap a day for its workouts. */
-.cal { margin-top: 12px; padding: 12px 12px 14px; border-radius: 22px; background: var(--surface); border: 0.5px solid var(--hairline); touch-action: pan-y; }
-.cal-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 6px; }
-.cal-title { font-size: 17px; font-weight: 650; }
-.cal-nav { width: 36px; height: 36px; border-radius: 999px; display: grid; place-items: center; color: var(--ink); background: var(--raised); }
+/* History calendar: one compact card. The week by default, the month when expanded. */
+.cal { margin-top: 8px; padding: 10px 10px 12px; border-radius: 20px; background: var(--surface); border: 0.5px solid var(--hairline); touch-action: pan-y; }
+.cal-head { display: flex; align-items: center; gap: 4px; padding: 0 0 8px 6px; }
+.cal-title { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 2px 0; }
+.cal-month { display: inline-flex; align-items: center; gap: 4px; font-size: 17px; font-weight: 650; }
+.cal-month svg { color: var(--ink-3); transition: transform 0.2s var(--ease); }
+.cal.expanded .cal-month svg { transform: rotate(180deg); }
+.cal-summary { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cal-nav { flex: none; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: var(--ink); background: var(--raised); }
 .cal-nav:disabled { opacity: 1; color: var(--ink-3); background: none; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 6px; justify-items: center; }
-.cal-dow { font-size: 12px; font-weight: 600; color: var(--ink-3); padding: 4px 0 2px; }
-.cal-day { position: relative; width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; font-size: 16px; font-weight: 500; color: var(--ink); transition: background-color 0.15s, transform 0.12s var(--ease); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
+.cal-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.cal-dow { font-size: 11px; font-weight: 600; color: var(--ink-3); }
+.cal-day { position: relative; width: 38px; height: 38px; border-radius: 999px; display: grid; place-items: center; font-size: 15px; font-weight: 500; color: var(--ink); transition: background-color 0.15s, transform 0.12s var(--ease); }
 .cal-day:active:not(:disabled) { transform: scale(0.9); }
+.cal-day:disabled { opacity: 1; cursor: default; }
 .cal-day.out { visibility: hidden; }
 .cal-day.later { color: var(--ink-3); }
 .cal-day.today { box-shadow: inset 0 0 0 1.5px var(--ink-2); }
 .cal-day.on { background: var(--done); color: var(--bg); font-weight: 700; }
-.cal-day.selected { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ink); }
-.cal-day.on.selected { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--done); }
+.cal-day.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--ink); }
+.cal-day.on.selected { box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--done); }
 .cal-more { position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 999px; background: var(--bg); }
-.cal-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
-.cal-stats > div { padding: 10px 12px; border-radius: 16px; background: var(--surface); border: 0.5px solid var(--hairline); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.cal-stats span { font-size: 19px; font-weight: 650; white-space: nowrap; }
-.cal-stats small { font-size: 12px; color: var(--ink-2); font-weight: 600; }
-.cal-stats label { font-size: 12px; color: var(--ink-3); font-weight: 500; }
-.cal-stats .streak span { color: var(--done); }
+.hist-month .hist-streak { font-size: 14px; font-weight: 600; color: var(--done); white-space: nowrap; }
 .hist-clear { font-size: 15px; font-weight: 600; color: var(--done); padding: 4px 0; }
 .hist-none { padding: 18px 16px; border-radius: 18px; background: var(--surface); border: 0.5px solid var(--hairline); color: var(--ink-2); font-size: 15px; }

@@ -26,7 +26,7 @@ export function AccountButton() {
 export function SectionHead({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="section-head">
-      <h2 className="eyebrow" style={{ margin: 0 }}>{title}</h2>
+      <h2 className="section-title">{title}</h2>
       {children}
     </div>
   )
