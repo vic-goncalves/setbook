@@ -275,7 +275,12 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 /* The page ends where the tab bar starts, so the sticky composer rests above it and never
    covers the last message. While typing on a phone the tab bar is hidden. */
 .shell:has(.coach) { padding-bottom: var(--tabbar); }
-@media (max-width: 700px) { .composing .shell:has(.coach) { padding-bottom: 0; } }
+@media (max-width: 700px) {
+  .composing .shell:has(.coach) { padding-bottom: 0; }
+  /* With the tab bar hidden, the page still fills the screen, so the composer sits at the
+     bottom edge (as it does in a long thread) instead of leaving the tab bar's space empty. */
+  .composing .coach { min-height: calc(100dvh - var(--safe-top)); }
+}
 .coach { min-height: calc(100dvh - var(--tabbar) - var(--safe-top)); display: flex; flex-direction: column; }
 .coach-actions { display: flex; align-items: center; gap: 2px; margin-bottom: 2px; }
 .coach-actions .icon-button { color: var(--ink); }
