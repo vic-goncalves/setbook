@@ -431,6 +431,9 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 }
 .train-play:active { transform: scale(0.92); }
 .train-play svg { margin-left: 2px; }
+.train-empty-start { text-align: left; }
+.train-quick { margin-top: 12px; }
+.train-quick .train-row { min-height: 68px; }
 .train-quiet { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin-top: 12px; color: var(--ink-2); font-weight: 600; font-size: 15px; }
 .train-empty { display: flex; flex-direction: column; padding: 20px; border-radius: 18px; background: var(--surface); border: 0.5px solid var(--hairline); }
 .train-empty strong { font-size: 17px; }
@@ -449,22 +452,6 @@ input[switch] { accent-color: var(--done); width: 51px; height: 31px; flex: none
 .tpl-range .field { flex: 1; min-width: 0; height: 44px; text-align: center; }
 .tpl-load { height: 44px; width: 100%; text-align: center; }
 .tpl-detail-link { margin-top: 10px; font-size: 14px; font-weight: 500; color: var(--ink-3); padding: 4px 0; }
-
-/* This week on the Train tab. */
-.week { display: block; margin-top: 12px; padding: 14px 14px 16px; border-radius: 20px; background: var(--surface); border: 0.5px solid var(--hairline); }
-.week:active { opacity: 0.7; }
-.week-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
-.week-title { font-size: 15px; font-weight: 600; }
-.week-sum { font-size: 14px; color: var(--ink-2); }
-.week-days { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 12px; }
-.week-day { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.week-letter { font-size: 12px; font-weight: 600; color: var(--ink-3); }
-.week-day.today .week-letter { color: var(--ink); }
-.week-dot { width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center; font-size: 14px; font-weight: 500; color: var(--ink-2); background: var(--raised); }
-.week-day.later .week-dot { background: none; color: var(--ink-3); }
-.week-day.today .week-dot { box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--ink); }
-.week-dot.on { background: var(--done); color: var(--bg); }
-.week-day.today .week-dot.on { box-shadow: inset 0 0 0 1.5px var(--done), 0 0 0 2px var(--bg), 0 0 0 3.5px var(--done); }
 
 /* History list */
 .hist-month { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
