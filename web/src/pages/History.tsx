@@ -13,7 +13,7 @@ export function History() {
   }
   return (
     <>
-      <PageHeader account eyebrow={completed.length ? `${completed.length} workouts logged` : undefined} title="History" />
+      <PageHeader account eyebrow={completed.length ? `${completed.length} workout${completed.length === 1 ? '' : 's'} logged` : 'No workouts yet'} title="History" />
       {completed.length === 0 && (
         <div className="card section"><EmptyState title="No workouts yet" message="Finished workouts land here, grouped by month, with every set you logged." /></div>
       )}

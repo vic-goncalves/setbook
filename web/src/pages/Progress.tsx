@@ -31,7 +31,7 @@ export function Progress() {
 
   return (
     <>
-      <PageHeader account title="Progress" />
+      <PageHeader account eyebrow={trends.length ? `${trends.length} exercise${trends.length === 1 ? '' : 's'} tracked` : 'Your trends'} title="Progress" />
       <a className="card clickable" href="#/progress/body-weight" style={{ display: 'block', marginTop: 16 }}>
         <div className="row"><span className="eyebrow spacer">Body weight</span><Chevron /></div>
         {summary.latest ? (

@@ -74,6 +74,7 @@ export function Coach() {
     <div className="coach">
       <PageHeader
         account
+        eyebrow="Powered by Claude"
         title="Coach"
         action={!empty && <button className="btn btn-ghost" onClick={newChat} disabled={chat.busy}>New chat</button>}
       />
