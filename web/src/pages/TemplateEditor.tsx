@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { loadLabel } from '../domain/catalog'
-import { DEFAULT_REST, setLabel, strip } from '../domain/workout'
+import { DEFAULT_REST, duplicateTemplate, setLabel, strip } from '../domain/workout'
 import type { Measurement, TemplateExercise, TemplateSet, WorkoutTemplate } from '../domain/types'
 import { newId, nowIso, tracksLoad } from '../domain/types'
 import { mass, parseDecimal, parseInteger } from '../format'
@@ -24,6 +24,7 @@ export function TemplateEditor({ id }: { id: string }) {
   const [picking, setPicking] = useState(false)
   const [invalid, setInvalid] = useState<Set<string>>(new Set())
   const [discarding, setDiscarding] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const changed = JSON.stringify(draft) !== JSON.stringify(existing)
   const canSave = draft.name.trim().length > 0 && invalid.size === 0 && (!existing || changed)
 
@@ -76,6 +77,16 @@ export function TemplateEditor({ id }: { id: string }) {
       ))}
 
       <button className="btn btn-secondary" style={{ marginTop: 28 }} onClick={() => setPicking(true)}><Icon name="plus" size={16} /> Add exercises</button>
+      {existing && (
+        <div className="tpl-footer">
+          <button onClick={() => { store.save('template', duplicateTemplate(existing)); navigate('/train') }}>Duplicate template</button>
+          <button className="danger" onClick={() => setDeleting(true)}>Delete template</button>
+        </div>
+      )}
+      {deleting && (
+        <Confirm title={`Delete ${existing?.name ?? 'template'}?`} message="Past workouts started from it stay in your history." confirm="Delete template"
+          onCancel={() => setDeleting(false)} onConfirm={() => { if (existing) store.remove('template', existing.id); navigate('/train') }} />
+      )}
       {picking && (
         <ExercisePicker onClose={() => setPicking(false)} onDone={(list) =>
           setDraft({ ...draft, exercises: [...draft.exercises, ...list.map((e) => ({ id: newId(), exerciseId: e.id, restSeconds: defaultRest || DEFAULT_REST, sets: [{ id: newId(), type: 'working' as const }] }))] })}

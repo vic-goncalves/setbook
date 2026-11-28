@@ -1,13 +1,27 @@
 import { useState } from 'react'
 import { muscleNames } from '../domain/catalog'
-import { completedSetCount, duplicateTemplate, emptySession, estimatedMinutes, incompleteSetCount, startFromTemplate } from '../domain/workout'
+import { completedSetCount, emptySession, estimatedMinutes, incompleteSetCount, startFromTemplate } from '../domain/workout'
 import type { Exercise, WorkoutTemplate } from '../domain/types'
 import { tap } from '../device'
 import { relativeDay, stopwatch } from '../format'
 import { navigate } from '../router'
 import { store, useStore } from '../store'
-import { ActionSheet, Confirm, PageHeader, useNow } from '../ui/components'
+import { Confirm, PageHeader, useNow } from '../ui/components'
+import { SwipeRow } from '../ui/swipe'
 import { Icon } from '../ui/icons'
+
+/** A template's tile: its day number ("1 · Push" -> 1) or first letter. */
+function tileOf(name: string): string {
+  const n = name.match(/^\s*(\d{1,2})\b/)
+  return n ? n[1]! : (name.trim().match(/[\p{L}\p{N}]/u)?.[0] ?? '•').toUpperCase()
+}
+
+/** The name without its day number when the tile shows it: "1 · Push" -> "Push". */
+function displayName(name: string): string {
+  return name.replace(/^\s*\d{1,2}\s*[·.:)\-–]\s*/, '') || name
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1)
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
@@ -23,13 +37,12 @@ function musclesOf(t: WorkoutTemplate, byId: Map<string, Exercise>): string {
     if (m) sets.set(m, (sets.get(m) ?? 0) + e.sets.length)
   }
   const names = [...sets.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => muscleNames[m as keyof typeof muscleNames] ?? m)
-  return names.length > 3 ? `${names.slice(0, 3).join(', ')} +${names.length - 3}` : names.join(', ')
+  return names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ')
 }
 
 export function Train({ onToast }: { onToast: (m: string) => void }) {
   const data = useStore()
   const now = useNow()
-  const [menu, setMenu] = useState<WorkoutTemplate>()
   const [deleting, setDeleting] = useState<WorkoutTemplate>()
   const active = data.sessions.find((s) => s.state === 'active')
 
@@ -61,15 +74,14 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
       )}
 
       {!active && (
-        <div className="train-list train-quick">
-          <div className="train-row">
-            <button className="train-row-main train-empty-start" onClick={() => start()}>
-              <span className="train-row-name">Empty workout</span>
-              <span className="train-row-meta">Add exercises as you go</span>
-            </button>
-            <button className="train-play" onClick={() => start()} aria-label="Start an empty workout"><Icon name="play" size={14} /></button>
-          </div>
-        </div>
+        <button className="train-quick" onClick={() => start()} aria-label="Start an empty workout">
+          <span className="train-tile quick"><Icon name="plus" size={22} stroke={2.4} /></span>
+          <span className="train-row-main">
+            <span className="train-row-name">Empty workout</span>
+            <span className="train-row-meta">Add exercises as you go</span>
+          </span>
+          <span className="train-play" aria-hidden="true"><Icon name="play" size={14} /></span>
+        </button>
       )}
 
       <section className="section">
@@ -92,34 +104,25 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
             {data.templates.map((t) => {
               const last = lastDone(t.id)
               return (
-                <div key={t.id} className="train-row">
-                  <a className="train-row-main" href={`#/templates/${t.id}`}>
-                    <span className="train-row-name">{t.name}</span>
-                    <span className="train-row-meta">{musclesOf(t, data.exerciseById) || 'No exercises yet'}</span>
-                    <span className="train-row-meta faint">{plural(workingSets(t), 'set')} · ~{estimatedMinutes(t)} min · {last ? `last ${relativeDay(last)}` : 'not done yet'}</span>
-                  </a>
-                  <button className="icon-button train-row-more" onClick={() => setMenu(t)} aria-label={`Options for ${t.name}`}><Icon name="more" size={20} stroke={3} /></button>
-                  {!active && (
-                    <button className="train-play" onClick={() => start(t)} aria-label={`Start ${t.name}`}><Icon name="play" size={14} /></button>
-                  )}
-                </div>
+                <SwipeRow key={t.id} onDelete={() => setDeleting(t)}>
+                  <div className="train-row">
+                    <a className="train-tile" href={`#/templates/${t.id}`} aria-hidden="true" tabIndex={-1}>{tileOf(t.name)}</a>
+                    <a className="train-row-main" href={`#/templates/${t.id}`}>
+                      <span className="train-row-name">{displayName(t.name)}</span>
+                      <span className="train-row-meta">{musclesOf(t, data.exerciseById) || 'No exercises yet'}</span>
+                      <span className="train-row-meta faint">{plural(workingSets(t), 'set')} · {estimatedMinutes(t)} min · {last ? capitalize(relativeDay(last)) : 'New'}</span>
+                    </a>
+                    {!active && (
+                      <button className="train-play" onClick={() => start(t)} aria-label={`Start ${t.name}`}><Icon name="play" size={14} /></button>
+                    )}
+                  </div>
+                </SwipeRow>
               )
             })}
           </div>
         )}
       </section>
 
-      {menu && (
-        <ActionSheet
-          title={menu.name}
-          onClose={() => setMenu(undefined)}
-          actions={[
-            { label: 'Edit', run: () => navigate(`/templates/${menu.id}`) },
-            { label: 'Duplicate', run: () => { store.save('template', duplicateTemplate(menu)); onToast(`Duplicated ${menu.name}`) } },
-            { label: 'Delete', danger: true, run: () => setDeleting(menu) },
-          ]}
-        />
-      )}
       {deleting && (
         <Confirm
           title={`Delete ${deleting.name}?`}
