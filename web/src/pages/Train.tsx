@@ -64,7 +64,6 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
 
       {!active && (
         <button className="train-quick" onClick={() => start()} aria-label="Start an empty workout">
-          <span className="train-tile quick"><Icon name="plus" size={22} stroke={2.4} /></span>
           <span className="train-row-main">
             <span className="train-row-name">Empty workout</span>
             <span className="train-row-meta">Add exercises as you go</span>
