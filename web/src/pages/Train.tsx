@@ -23,7 +23,7 @@ export function Train({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <>
-      <PageHeader account eyebrow={new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} title="Train" />
+      <PageHeader account title="Train" />
       <div className="stack" style={{ marginTop: 16 }}>
         {active ? (
           <button className="card clickable" style={{ textAlign: 'left', borderColor: 'rgba(76,195,138,.35)' }} onClick={() => navigate('/workout')}>

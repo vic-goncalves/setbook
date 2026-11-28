@@ -7,8 +7,7 @@ export function PageHeader({ eyebrow, title, action, account = false }: { eyebro
   return (
     <header className="page-header row" style={{ alignItems: 'flex-end' }}>
       <div className="spacer">
-        {/* Tab roots always keep the eyebrow line, so titles sit at the same height on every tab. */}
-        {(eyebrow || account) && <div className="eyebrow">{eyebrow || '\u00a0'}</div>}
+        {eyebrow && <div className="eyebrow">{eyebrow}</div>}
         <h1 className="title">{title}</h1>
       </div>
       {action}
